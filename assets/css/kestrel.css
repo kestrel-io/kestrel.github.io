@@ -52,6 +52,7 @@ html,body{
   background:var(--nav-bg);
   border-bottom:none;
 }
+#kestrel-icon{height:60px;width:auto;flex-shrink:0;display:block;}
 #logo{
   font-family:var(--title);font-size:32px;font-weight:900;
   color:#ffffff;letter-spacing:3px;white-space:nowrap;
