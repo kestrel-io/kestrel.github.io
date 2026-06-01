@@ -410,16 +410,19 @@ tr:nth-child(even) td{background:var(--bg3)}
 .camp-summary .pill-stat .k{font-size:11px;color:var(--text-dim);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
 
 /* ── Home page overrides ── */
-body.home-body{overflow:auto;}
-.home-hero{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  padding:60px 40px 80px;min-height:0;
+html:has(body.home-body){height:auto;min-height:100vh;overflow-y:auto;}
+body.home-body{
+  height:auto;min-height:100vh;overflow-y:auto;
   background:
-    linear-gradient(rgba(28,28,22,.82),rgba(28,28,22,.82)),
-    url('../img/kestrel-transparent-003.png') center/40% no-repeat;
+    linear-gradient(rgba(28,28,22,.84),rgba(28,28,22,.84)),
+    url('../img/kestrel-transparent-003.png') center/40% no-repeat fixed;
+}
+.home-hero{
+  flex:none;display:flex;flex-direction:column;align-items:center;
+  padding:60px 40px 80px;
 }
 .home-content{
-  max-width:640px;width:100%;text-align:left;
+  width:min(640px,100%);text-align:left;
 }
 .home-phrase{
   font-family:var(--title);font-size:44px;font-weight:900;
