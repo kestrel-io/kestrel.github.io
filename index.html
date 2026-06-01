@@ -32,40 +32,56 @@
 </div>
 
 <div class="home-hero">
-  <div class="home-phrase"><span>Active Defense</span></div>
-  <div class="home-phrase" style="font-size:30px;margin-bottom:20px;">through <span>Chainable Response Actions</span></div>
-  <div class="home-sub">
-    Kestrel correlates eBPF kernel telemetry with threat intelligence to detect and respond
-    to adversarial behavior in real time. Define detection campaigns using YAML rules,
-    chain weighted consensus events, and trigger precise countermeasures — all without
-    modifying the kernel.
-  </div>
+  <div class="home-content">
+    <div class="home-phrase">Active Defense</div>
+    <div class="home-phrase" style="font-size:30px;">through Chainable Response Actions</div>
+    <p class="home-sub">
+      Kestrel correlates eBPF kernel telemetry with threat intelligence to detect and respond
+      to adversarial behavior in real time. Define detection campaigns using YAML rules,
+      chain weighted consensus events, and trigger precise countermeasures — all without
+      modifying the kernel.
+    </p>
+    <div class="home-yaml">
+      <div class="home-yaml-label">Detection Rule Format</div>
+<pre class="home-yaml-code">campaign_id:   C0061
+campaign_name: "Operation Digital Eye"
 
-
-  <div class="home-yaml">
-    <div class="home-yaml-label">DETECTION RULE FORMAT</div>
-    <pre class="home-yaml-code"><span class="ykey">campaign_id</span><span class="ypunct">:</span> <span class="yval">C0061</span>
-<span class="ykey">campaign_name</span><span class="ypunct">:</span> <span class="ystr">"Operation Digital Eye"</span>
-
-<span class="ykey">detections</span><span class="ypunct">:</span>
-  <span class="ykey">c0061_ssh_authorized_keys_manipulation</span><span class="ypunct">:</span>
-    <span class="ykey">threshold</span><span class="ypunct">:</span>  <span class="ynum">0.70</span>
-    <span class="ykey">window</span><span class="ypunct">:</span>     <span class="ystr">"90s"</span>
-    <span class="ykey">context_key</span><span class="ypunct">:</span> <span class="yval">uid</span>
-    <span class="ykey">cooldown</span><span class="ypunct">:</span>   <span class="ystr">"300s"</span>
-    <span class="ykey">tactics</span><span class="ypunct">:</span>
-      <span class="ykey">TA0003</span><span class="ypunct">:</span> <span class="ypunct">{</span> <span class="ykey">name</span><span class="ypunct">:</span> <span class="ystr">"Persistence"</span><span class="ypunct">,</span> <span class="ykey">base_severity</span><span class="ypunct">:</span> <span class="yval">high</span> <span class="ypunct">}</span>
-    <span class="ykey">technique</span><span class="ypunct">:</span>
-      <span class="ykey">id</span><span class="ypunct">:</span>         <span class="ystr">"T1098.004"</span>
-      <span class="ykey">confidence</span><span class="ypunct">:</span> <span class="ynum">0.90</span>
-    <span class="ykey">events</span><span class="ypunct">:</span>
-      <span class="ydash">-</span> <span class="yaudit">TA0003_T1098_004_DC0039</span>
-      <span class="ydash">-</span> <span class="yaudit">TA0003_T1098_004_DC0061</span>
-      <span class="ydash">-</span> <span class="yaudit">TA0004_T1098_004_DC0055</span>
-    <span class="ykey">actions</span><span class="ypunct">:</span>
-      <span class="ydash">-</span> <span class="yaction">LOGGING</span>
-      <span class="ydash">-</span> <span class="yaction">PAGER</span>
-      <span class="ydash">-</span> <span class="yaction">KILL_CHAIN</span></pre>
+detections:
+  c0061_ssh_authorized_keys_manipulation:
+    threshold:   0.70
+    window:      "90s"
+    context_key: uid
+    cooldown:    "300s"
+    tactics:
+      TA0003: { name: "Persistence", base_severity: high }
+    technique:
+      id:         "T1098.004"
+      confidence: 0.90
+    events:
+      TA0003_T1098_004_DC0039:
+        program: BPF_PROG_TYPE_LSM
+        weight:  0.70
+        filters:
+          - ctx_present == 1
+          - paths contains [ /root/.ssh/, /home/ ]
+          - exe not contains [ sshd, ssh-copy-id, ansible, puppet ]
+      TA0003_T1098_004_DC0061:
+        program: BPF_PROG_TYPE_KPROBE
+        weight:  0.50
+        filters:
+          - paths == [ /home/ ]
+          - exe not contains [ sshd, ssh-copy-id, ansible, puppet ]
+      TA0003_T1098_004_DC0032:
+        program: BPF_PROG_TYPE_TRACEPOINT
+        weight:  0.35
+        filters:
+          - comm contains [ sshd, bash, sh, ansible ]
+          - exe not contains [ sshd, ssh-keygen, ssh-copy-id ]
+    actions:
+      - LOGGING
+      - PAGER
+      - KILL_CHAIN</pre>
+    </div>
   </div>
   <div class="home-stat-row">
     <span class="home-pill"><b>13</b> Tactics</span>

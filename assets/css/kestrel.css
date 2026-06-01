@@ -412,11 +412,14 @@ tr:nth-child(even) td{background:var(--bg3)}
 /* ── Home page overrides ── */
 body.home-body{overflow:auto;}
 .home-hero{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:60px 40px;text-align:center;min-height:0;
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding:60px 40px 80px;min-height:0;
   background:
     linear-gradient(rgba(28,28,22,.82),rgba(28,28,22,.82)),
     url('../img/kestrel-transparent-003.png') center/40% no-repeat;
+}
+.home-content{
+  max-width:640px;width:100%;text-align:left;
 }
 .home-phrase{
   font-family:var(--title);font-size:44px;font-weight:900;
@@ -426,7 +429,7 @@ body.home-body{overflow:auto;}
 .home-phrase span{color:var(--accent);}
 .home-sub{
   font-family:var(--body);font-size:19px;color:rgba(255,255,255,.7);
-  margin-bottom:40px;letter-spacing:.2px;line-height:1.5;max-width:620px;
+  margin-top:16px;margin-bottom:32px;letter-spacing:.2px;line-height:1.6;
 }
 .home-cards{
   display:flex;flex-wrap:wrap;gap:16px;justify-content:center;
@@ -455,7 +458,7 @@ body.home-body{overflow:auto;}
 .home-pill b{color:var(--accent);font-weight:700;}
 
 .home-yaml{
-  margin:36px auto 0;max-width:560px;width:100%;text-align:left;
+  width:100%;
 }
 .home-yaml-label{
   font-family:var(--body);font-size:11px;font-weight:700;letter-spacing:1px;
