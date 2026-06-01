@@ -36,7 +36,7 @@ function showTip(e, d) {
   const name = data.name || 'Root';
   const id   = data.id   || '';
   let meta   = '';
-  if (t === 'dc')  meta = `${data.log_source||''}<br>Key: ${data.id||''}`;
+  if (t === 'dc')  meta = `${data.ebpf_program ? data.ebpf_program.replace('BPF_PROG_TYPE_','') + ' · ' : ''}${data.log_source||''}<br>Key: ${data.id||''}`;
   if (t === 'det') meta = id;
   if (t === 'tactic') meta = id;
   const hasUrl = !!data.url;
@@ -197,22 +197,22 @@ function openPanel(d) {
     let channels = [];
     dcRows_.forEach(r=>{ if(r.log_source && !channels.includes(r.log_source)) channels.push(r.log_source); });
     const chips = channels.map(ch=>
-      `<span class="sp-chip ${ch.startsWith('audit:')?'audit':ch.startsWith('ebpf:')?'ebpf':''}">${ch}</span>`
+      `<span class="sp-chip ${ch.startsWith('ebpf:')?'ebpf':ch.startsWith('audit:')?'audit':''}">${ch}</span>`
     ).join('');
-    // auditd rules: prefer full rule strings from campaign DCR, fall back to audit_key list from rows
-    const campRules = campDcEntry.auditd_rules_original || [];
+    // eBPF programs: built from enriched row data (ebpf_program, ebpf_weight, ebpf_filters)
+    const ebpfRows = dcRows_.filter(r => r.ebpf_program);
+    const progMap = {};
+    ebpfRows.forEach(r => {
+      if (!progMap[r.ebpf_program]) progMap[r.ebpf_program] = { weight: r.ebpf_weight, max_count: r.ebpf_max_count, filters: r.ebpf_filters || [] };
+    });
+    const ebpfHtml = Object.entries(progMap).map(([prog, v]) => {
+      const short = prog.replace('BPF_PROG_TYPE_', '');
+      const filtersHtml = (v.filters||[]).map(f=>`<div class="sp-rule"><code>${f}</code></div>`).join('');
+      return `<div class="cov-ebpf"><b>${short}</b> · weight <span style="color:var(--accent)">${v.weight}</span> · max_count ${v.max_count}${filtersHtml?`<div style="margin-top:4px">${filtersHtml}</div>`:''}`;
+    }).join('');
+    // Audit keys (event identifiers — secondary)
     const auditKeys = [...new Set(dcRows_.map(r=>r.audit_key).filter(Boolean))];
-    const rules = campRules.length
-      ? campRules.map(r=>{ const s=(r.rule||r).replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${r.rule||r}</code></div>`; }).join('')
-      : auditKeys.length
-        ? auditKeys.map(k=>{ const s=k.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${k}</code></div>`; }).join('')
-        : `<div class="sp-empty" style="padding:8px 0;font-size:9.5px">No auditd rules — syslog/journald channel</div>`;
-    // eBPF: prefer full programs from campaign DCR, fall back to ebpf: channel info from rows
-    const campEbpf = campDcEntry.ebpf_programs || [];
-    const ebpfRowChannels = [...new Set(dcRows_.filter(r=>r.log_source&&r.log_source.startsWith('ebpf:')).map(r=>r.log_source))];
-    const ebpfHtml = campEbpf.length
-      ? campEbpf.map(p=>{ const filt=p.filter?renderFilter(p.filter):''; return `<div class="cov-ebpf"><b>attach</b> ${p.attach}${filt?`<br><b>filter</b> ${filt}`:''}${p.kernel_min?` · <b>kernel ≥</b> ${p.kernel_min}`:''}${p.co_re?' · CO-RE':''}${p.note?`<br><span style="color:var(--text-dim);font-size:8.5px">${p.note}</span>`:''}</div>`; }).join('')
-      : ebpfRowChannels.map(ch=>{ const evts=[...new Set(dcRows_.filter(r=>r.log_source===ch).map(r=>r.event).filter(Boolean))]; return `<div class="cov-ebpf"><b>channel</b> ${ch}${evts.length?`<br><b>events</b> ${evts.slice(0,3).join(' · ')}`:''}</div>`; }).join('');
+    const auditKeysHtml = auditKeys.map(k=>{ const s=k.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${k}</code></div>`; }).join('') || `<div class="sp-empty" style="padding:8px 0;font-size:11.5px">No event keys</div>`;
     const techs = [...new Set(DATA.rows.filter(r=>r.dc_id===dcId).map(r=>`${r.tech_id}: ${r.tech_name}`))];
     body.innerHTML = `
       <div class="sp-badge">${dcId}</div>
@@ -221,11 +221,9 @@ function openPanel(d) {
       ${mitreLink}
       <div class="sp-sec">Log Source Channels</div>
       <div class="sp-chips">${chips}</div>
-      <div class="sp-sec">Coverage Note</div>
-      <div class="sp-note">${entry.note||campDcEntry.description||entry.description||''}</div>
-      <div class="sp-sec">auditd Rules <span style="font-size:8px;color:var(--text-dim)">(click to copy)</span></div>
-      ${rules}
       ${ebpfHtml ? `<div class="sp-sec">eBPF Programs</div>${ebpfHtml}` : ''}
+      <div class="sp-sec">Event Keys <span style="font-size:10px;color:var(--text-dim)">(click to copy)</span></div>
+      ${auditKeysHtml}
       <div class="sp-sec">Referenced by Techniques (${techs.length})</div>
       ${(() => {
         const techRows = DATA.rows.filter(r => r.dc_id === dcId);
@@ -360,7 +358,7 @@ function openPanel(d) {
         ${totalDCs} data components<br>
         ${DATA.stats.unique_audit_keys||214} unique audit keys
       </div>
-      <div class="sp-note" style="margin-top:6px">Click any node to view its details and associated auditd rules.</div>
+      <div class="sp-note" style="margin-top:6px">Click any node to view its details and associated eBPF programs.</div>
     `;
   }
   sp.classList.add('on');
@@ -859,10 +857,20 @@ function fmtCell(col, row) {
       return v
         ? `<span class="tag t-key" onclick="copy('${v}')" title="Click to copy">${v}</span>`
         : empty;
-    case 'log_source':
-      return `<span class="td-mono">${v}</span>`;
+    case 'log_source': {
+      const isEbpf = v && v.startsWith('ebpf:');
+      return `<span class="td-mono" style="${isEbpf?'color:var(--col-dc)':''}">${v||'—'}</span>`;
+    }
     case 'event':
       return `<span class="td-mono" style="color:var(--text)">${v}</span>`;
+    case 'ebpf_program':
+      return v
+        ? `<span class="tag t-ebpf">${v.replace('BPF_PROG_TYPE_','')}</span>`
+        : `<span style="color:var(--text-dim);font-size:10px">auditd</span>`;
+    case 'ebpf_weight':
+      return v != null
+        ? `<span class="td-mono" style="color:var(--accent)">${v}</span>`
+        : empty;
     default: return v || empty;
   }
 }
@@ -911,7 +919,7 @@ function applyFilters() {
 }
 
 function renderTable() {
-  const cols=['tac_id','tech_id','sub_id','det_id','an_id','an_desc','dc_id','dc_name','audit_key','log_source','event'];
+  const cols=['tac_id','tech_id','sub_id','dc_id','dc_name','audit_key','ebpf_program','ebpf_weight','log_source','event'];
   const tbody = document.getElementById('tbody');
   tbody.innerHTML =
     tData.map(r=>`<tr>${cols.map(c=>`<td>${fmtCell(c,r)}</td>`).join('')}</tr>`).join('');
@@ -1008,7 +1016,7 @@ function initDatasetPanel() {
     { label: 'Analytics',            val: s.total_analytics                  || 341  },
     { label: 'Data Components',      val: s.total_data_components_referenced || 19  },
     { label: 'Unique Audit Keys',    val: s.unique_audit_keys                || 674 },
-    { label: 'auditd Rules (DCR)',   val: s.dcr_rules_total                  || 121 },
+    { label: 'eBPF Enriched Keys',  val: s.ebpf_rows                        || 160 },
   ];
   const grid = document.getElementById('ds-grid');
   if (grid) {

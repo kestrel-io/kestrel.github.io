@@ -267,6 +267,7 @@ tr:nth-child(even) td{background:var(--bg3)}
 .t-dc  {background:rgba(104,168,120,.12); color:var(--col-dc); border:1px solid rgba(104,168,120,.35)}
 .t-an  {background:rgba(142,148,144,.12); color:var(--text-dim); border:1px solid rgba(142,148,144,.3)}
 .t-key {background:rgba(200,120,40,.12);  color:var(--accent);  border:1px solid rgba(200,120,40,.4);letter-spacing:.5px;font-size:10px}
+.t-ebpf{background:rgba(104,168,120,.15); color:var(--col-dc);  border:1px solid rgba(104,168,120,.45);font-weight:700;letter-spacing:.3px;font-size:10px}
 .td-dim{color:var(--text-dim);font-size:12px;line-height:1.5}
 .td-mono{font-family:var(--mono);font-size:11px;color:var(--text-dim)}
 .ext-link{
