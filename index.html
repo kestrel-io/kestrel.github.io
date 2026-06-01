@@ -33,7 +33,7 @@
 
 <div class="home-hero">
   <div class="home-phrase"><span>Active Defense</span></div>
-  <div class="home-phrase" style="font-size:28px;margin-bottom:20px;">through <span>Chainable Response Actions</span></div>
+  <div class="home-phrase" style="font-size:30px;margin-bottom:20px;">through <span>Chainable Response Actions</span></div>
   <div class="home-sub">
     Kestrel correlates eBPF kernel telemetry with threat intelligence to detect and respond
     to adversarial behavior in real time. Define detection campaigns using YAML rules,
@@ -41,6 +41,32 @@
     modifying the kernel.
   </div>
 
+
+  <div class="home-yaml">
+    <div class="home-yaml-label">DETECTION RULE FORMAT</div>
+    <pre class="home-yaml-code"><span class="ykey">campaign_id</span><span class="ypunct">:</span> <span class="yval">C0061</span>
+<span class="ykey">campaign_name</span><span class="ypunct">:</span> <span class="ystr">"Operation Digital Eye"</span>
+
+<span class="ykey">detections</span><span class="ypunct">:</span>
+  <span class="ykey">c0061_ssh_authorized_keys_manipulation</span><span class="ypunct">:</span>
+    <span class="ykey">threshold</span><span class="ypunct">:</span>  <span class="ynum">0.70</span>
+    <span class="ykey">window</span><span class="ypunct">:</span>     <span class="ystr">"90s"</span>
+    <span class="ykey">context_key</span><span class="ypunct">:</span> <span class="yval">uid</span>
+    <span class="ykey">cooldown</span><span class="ypunct">:</span>   <span class="ystr">"300s"</span>
+    <span class="ykey">tactics</span><span class="ypunct">:</span>
+      <span class="ykey">TA0003</span><span class="ypunct">:</span> <span class="ypunct">{</span> <span class="ykey">name</span><span class="ypunct">:</span> <span class="ystr">"Persistence"</span><span class="ypunct">,</span> <span class="ykey">base_severity</span><span class="ypunct">:</span> <span class="yval">high</span> <span class="ypunct">}</span>
+    <span class="ykey">technique</span><span class="ypunct">:</span>
+      <span class="ykey">id</span><span class="ypunct">:</span>         <span class="ystr">"T1098.004"</span>
+      <span class="ykey">confidence</span><span class="ypunct">:</span> <span class="ynum">0.90</span>
+    <span class="ykey">events</span><span class="ypunct">:</span>
+      <span class="ydash">-</span> <span class="yaudit">TA0003_T1098_004_DC0039</span>
+      <span class="ydash">-</span> <span class="yaudit">TA0003_T1098_004_DC0061</span>
+      <span class="ydash">-</span> <span class="yaudit">TA0004_T1098_004_DC0055</span>
+    <span class="ykey">actions</span><span class="ypunct">:</span>
+      <span class="ydash">-</span> <span class="yaction">LOGGING</span>
+      <span class="ydash">-</span> <span class="yaction">PAGER</span>
+      <span class="ydash">-</span> <span class="yaction">KILL_CHAIN</span></pre>
+  </div>
   <div class="home-stat-row">
     <span class="home-pill"><b>13</b> Tactics</span>
     <span class="home-pill"><b>179</b> Techniques</span>
@@ -74,7 +100,7 @@
     </a>
   </div>
 
-  <div style="margin-top:48px;font-family:var(--body);font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.5px;">
+  <div style="margin-top:48px;font-family:var(--body);font-size:12px;color:rgba(255,255,255,.3);letter-spacing:.5px;">
     MITRE ATT&amp;CK&reg; &copy; 2025 The MITRE Corporation. ATT&amp;CK is a trademark of The MITRE Corporation.
   </div>
 </div>
