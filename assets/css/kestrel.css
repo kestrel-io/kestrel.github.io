@@ -413,7 +413,9 @@ tr:nth-child(even) td{background:var(--bg3)}
 /* ── Home page overrides ── */
 html:has(body.home-body){height:auto;min-height:100vh;overflow-y:auto;}
 body.home-body{
-  height:auto;min-height:100vh;overflow-y:auto;
+  height:auto;
+  min-height:100vh;
+  overflow-y:auto;
   background:
     linear-gradient(rgba(28,28,22,.84),rgba(28,28,22,.84)),
     url('../img/kestrel-transparent-003.png') no-repeat fixed;
