@@ -43,19 +43,17 @@
     </p>
     <div class="home-yaml">
       <div class="home-yaml-label">Detection Rule Format</div>
-<pre class="home-yaml-code">campaign_id:   C0061
-campaign_name: "Operation Digital Eye"
-
+        <pre class="home-yaml-code">
 detections:
-  c0061_ssh_authorized_keys_manipulation:
-    threshold:   0.70
-    window:      "90s"
+  ssh_authorized_keys_manipulation:
+    threshold: 0.70
+    window: "90s"
     context_key: uid
-    cooldown:    "300s"
+    cooldown: "300s"
     tactics:
       TA0003: { name: "Persistence", base_severity: high }
     technique:
-      id:         "T1098.004"
+      id: "T1098.004"
       confidence: 0.90
     events:
       TA0003_T1098_004_DC0039:
@@ -78,9 +76,9 @@ detections:
           - comm contains [ sshd, bash, sh, ansible ]
           - exe not contains [ sshd, ssh-keygen, ssh-copy-id ]
     actions:
-      - LOGGING
-      - PAGER
-      - KILL_CHAIN</pre>
+      - log
+      - notify
+      - isolation</pre>
     </div>
   </div>
   <div class="home-stat-row">
