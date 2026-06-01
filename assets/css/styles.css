@@ -164,4 +164,16 @@ h1 {
   .nav-links.open { display: flex; }
 
   .cards { grid-template-columns: 1fr; }
+
+  .hero { padding: 4rem 0 3rem; }
+
+  h1 { font-size: clamp(2rem, 10vw, 3.5rem); }
+
+  .lead { font-size: 1.1rem; }
+}
+
+@media (max-width: 480px) {
+  .button { padding: 0.75rem 1rem; font-size: 0.9rem; }
+
+  .section { padding: 2.5rem 0; }
 }

@@ -596,7 +596,8 @@ function initForce() {
   const svg = d3.select(cv).append('svg')
     .attr('viewBox', `0 0 ${W} ${H}`)
     .attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+    .style('width','100%').style('height','100%')
+    .style('touch-action','none');
 
   fSvg = svg;
 
@@ -701,7 +702,14 @@ function initForce() {
     })
     .on('mouseover',(e,d)=>showTip(e,d))
     .on('mousemove', moveTip)
-    .on('mouseout',  hideTip);
+    .on('mouseout',  hideTip)
+    .on('touchstart.tip',(e,d)=>{
+      if(e.touches&&e.touches[0]){
+        const t=e.touches[0];
+        showTip({clientX:t.clientX,clientY:t.clientY},d);
+        setTimeout(hideTip,1600);
+      }
+    });
 
   /* circles */
   node.append('circle')
@@ -1568,7 +1576,8 @@ function _cvBuildSim() {
   const W=cv.clientWidth||1200, H=cv.clientHeight||800;
   const svg=d3.select(cv).append('svg')
     .attr('viewBox',`0 0 ${W} ${H}`).attr('preserveAspectRatio','xMidYMid meet')
-    .style('width','100%').style('height','100%');
+    .style('width','100%').style('height','100%')
+    .style('touch-action','none');
   cvSvg=svg;
 
   cvZoom=d3.zoom().scaleExtent([.01,8]).on('zoom',e=>cvG.attr('transform',e.transform));
@@ -1627,7 +1636,14 @@ function _cvBuildSim() {
       _cvOpenPanel(d);
     })
     .on('mouseover',(e,d)=>showTip(e,d))
-    .on('mousemove',moveTip).on('mouseout',hideTip);
+    .on('mousemove',moveTip).on('mouseout',hideTip)
+    .on('touchstart.tip',(e,d)=>{
+      if(e.touches&&e.touches[0]){
+        const t=e.touches[0];
+        showTip({clientX:t.clientX,clientY:t.clientY},d);
+        setTimeout(hideTip,1600);
+      }
+    });
 
   node.append('circle')
     .attr('r',d=>TR_CV[d.data.type]||4)
@@ -1803,7 +1819,8 @@ function initCampForce() {
   const svg = d3.select(cv).append('svg')
     .attr('viewBox', `0 0 ${W} ${H}`)
     .attr('preserveAspectRatio', 'xMidYMid meet')
-    .style('width', '100%').style('height', '100%');
+    .style('width', '100%').style('height', '100%')
+    .style('touch-action', 'none');
 
   campSvg = svg;
 
@@ -1880,7 +1897,14 @@ function initCampForce() {
     })
     .on('mouseover', (e,d) => showTip(e,d))
     .on('mousemove', moveTip)
-    .on('mouseout',  hideTip);
+    .on('mouseout',  hideTip)
+    .on('touchstart.tip', (e,d) => {
+      if (e.touches && e.touches[0]) {
+        const t = e.touches[0];
+        showTip({ clientX: t.clientX, clientY: t.clientY }, d);
+        setTimeout(hideTip, 1600);
+      }
+    });
 
   node.append('circle')
     .attr('r', d => TR_CAMP[d.data.type]||4)
