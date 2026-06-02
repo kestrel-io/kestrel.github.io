@@ -26,6 +26,15 @@ function nColor(d) {
   return TC[t] || '#888';
 }
 
+function getDataRows() { return (typeof DATA !== 'undefined' && Array.isArray(DATA.rows)) ? DATA.rows : []; }
+function getDataStats() { return (typeof DATA !== 'undefined' && DATA.stats) ? DATA.stats : {}; }
+function getDataMeta() { return (typeof DATA !== 'undefined' && DATA.meta) ? DATA.meta : {}; }
+function hasProgramSuffix(key='') { return /_DC\d{4}_[A-Z0-9_]+$/.test(key); }
+function getProgramSuffix(key='') { const m = key.match(/_DC\d{4}_([A-Z0-9_]+)$/); return m ? m[1] : ''; }
+function uniqueEventKeyCount() { return new Set(getDataRows().map(r => r.audit_key).filter(Boolean)).size; }
+function splitEventKeyCount() { return new Set(getDataRows().map(r => r.audit_key).filter(hasProgramSuffix)).size; }
+function asRuleText(rule) { return typeof rule === 'string' ? rule : (rule && rule.rule) || ''; }
+
 /* -------------------------------------------------------
    TOOLTIP
 ------------------------------------------------------- */
@@ -36,7 +45,10 @@ function showTip(e, d) {
   const name = data.name || 'Root';
   const id   = data.id   || '';
   let meta   = '';
-  if (t === 'dc')  meta = `${data.ebpf_program ? data.ebpf_program.replace('BPF_PROG_TYPE_','') + ' · ' : ''}${data.log_source||''}<br>Key: ${data.id||''}`;
+  if (t === 'dc')  {
+    const variant = getProgramSuffix(data.id||'');
+    meta = `${data.ebpf_program ? data.ebpf_program.replace('BPF_PROG_TYPE_','') + ' · ' : ''}${data.log_source||''}<br>Event Key: ${data.id||''}${variant ? `<br>Variant: ${variant}` : ''}`;
+  }
   if (t === 'det') meta = id;
   if (t === 'tactic') meta = id;
   const hasUrl = !!data.url;
@@ -75,7 +87,7 @@ function copy(text) {
    STATS BAR
 ------------------------------------------------------- */
 function fillStats() {
-  const s = DATA.stats;
+  const s = getDataStats();
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   set('s0', s.total_tactics                    || 13);
   set('s1', s.total_techniques_parent          || 179);
@@ -83,7 +95,7 @@ function fillStats() {
   set('s3', s.total_detection_strategies       || 341);
   set('s4', s.total_analytics                  || 341);
   set('s5', s.total_data_components_referenced || 19);
-  set('s6', s.unique_audit_keys                || 674);
+  set('s6', s.unique_audit_keys                || uniqueEventKeyCount() || 738);
 }
 
 /* -------------------------------------------------------
@@ -158,17 +170,15 @@ function openPanel(d) {
     });
     const campDcRegistry = (typeof CAMPAIGNS !== 'undefined' && CAMPAIGNS.data_component_registry_linux_updated) || {};
     return Object.entries(map).sort(([a],[b]) => a.localeCompare(b)).map(([dc_id, v]) => {
-      const auditChannels = [...v.channels].filter(c => c.startsWith('audit:'));
       const channelBadges = [...v.channels].slice(0,4).map(c =>
         `<span class="sp-chip ${c.startsWith('audit:')?'audit':c.startsWith('ebpf:')?'ebpf':''}" style="font-size:7.5px;padding:1px 5px">${c}</span>`
       ).join('');
       const campDcr = campDcRegistry[dc_id] || {};
-      // auditd rules: full strings from campaign DCR, else audit_key list from rows
-      const campRules = campDcr.auditd_rules_original || [];
-      const auditKeys = [...new Set(v.rowSet.map(r=>r.audit_key).filter(Boolean))];
-      const auditRulesHtml = campRules.length
-        ? campRules.map(r=>{ const s=r.rule.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${r.rule}</code></div>`; }).join('')
-        : auditKeys.map(k=>{ const s=k.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${k}</code></div>`; }).join('');
+      const eventKeys = [...new Set(v.rowSet.map(r=>r.audit_key).filter(Boolean))];
+      const splitKeysPresent = eventKeys.some(hasProgramSuffix);
+      const campRules = (campDcr.auditd_rules_original || []).map(asRuleText).filter(Boolean);
+      const auditRulesHtml = campRules.map(rule=>{ const s=rule.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${rule}</code></div>`; }).join('');
+      const eventKeysHtml = eventKeys.map(key=>{ const s=key.replace(/'/g,"\\'"); const variant=getProgramSuffix(key); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${key}</code>${variant?`<div style="font-size:8px;color:var(--text-dim);margin-top:2px">Program variant: ${variant}</div>`:''}</div>`; }).join('');
       // eBPF: full programs from campaign DCR, else channel+events from rows
       const campEbpf = campDcr.ebpf_programs || [];
       const ebpfRowChs = [...new Set(v.rowSet.filter(r=>r.log_source&&r.log_source.startsWith('ebpf:')).map(r=>r.log_source))];
@@ -182,6 +192,7 @@ function openPanel(d) {
             <span class="sp-row-name" style="flex:1">${lnk('sp-link-dc', v.url, v.name)}</span>
           </div>
           ${channelBadges ? `<div style="display:flex;flex-wrap:wrap;gap:3px">${channelBadges}</div>` : ''}
+          ${eventKeysHtml ? `<div style="width:100%;margin-top:3px"><div style="font-size:8px;color:var(--text-dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px">event keys</div>${splitKeysPresent ? `<div style="font-size:8px;color:var(--text-dim);margin-bottom:3px">Program suffixes distinguish multi-program eBPF variants.</div>` : ''}${eventKeysHtml}</div>` : ''}
           ${auditRulesHtml ? `<div style="width:100%;margin-top:3px"><div style="font-size:8px;color:var(--text-dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px">auditd rules</div>${auditRulesHtml}</div>` : ''}
           ${ebpfHtml ? `<div style="width:100%;margin-top:3px"><div style="font-size:8px;color:var(--text-dim);margin-bottom:2px;text-transform:uppercase;letter-spacing:.3px">eBPF programs</div>${ebpfHtml}</div>` : ''}
         </div>`;
@@ -210,9 +221,12 @@ function openPanel(d) {
       const filtersHtml = (v.filters||[]).map(f=>`<div class="sp-rule"><code>${f}</code></div>`).join('');
       return `<div class="cov-ebpf"><b>${short}</b> · weight <span style="color:var(--accent)">${v.weight}</span> · max_count ${v.max_count}${filtersHtml?`<div style="margin-top:4px">${filtersHtml}</div>`:''}`;
     }).join('');
-    // Audit keys (event identifiers — secondary)
+    // Event keys + auditd guidance
     const auditKeys = [...new Set(dcRows_.map(r=>r.audit_key).filter(Boolean))];
-    const auditKeysHtml = auditKeys.map(k=>{ const s=k.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${k}</code></div>`; }).join('') || `<div class="sp-empty" style="padding:8px 0;font-size:11.5px">No event keys</div>`;
+    const splitKeysPresent = auditKeys.some(hasProgramSuffix);
+    const auditRules = (campDcEntry.auditd_rules_original || []).map(asRuleText).filter(Boolean);
+    const auditKeysHtml = auditKeys.map(key=>{ const s=key.replace(/'/g,"\\'"); const variant=getProgramSuffix(key); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${key}</code>${variant?`<div style="font-size:8px;color:var(--text-dim);margin-top:2px">Program variant: ${variant}</div>`:''}</div>`; }).join('') || `<div class="sp-empty" style="padding:8px 0;font-size:11.5px">No event keys</div>`;
+    const auditRulesHtml = auditRules.map(rule=>{ const s=rule.replace(/'/g,"\\'"); return `<div class="sp-rule" onclick="copy('${s}')"><span class="cp">COPY</span><code>${rule}</code></div>`; }).join('');
     const techs = [...new Set(DATA.rows.filter(r=>r.dc_id===dcId).map(r=>`${r.tech_id}: ${r.tech_name}`))];
     body.innerHTML = `
       <div class="sp-badge">${dcId}</div>
@@ -223,7 +237,9 @@ function openPanel(d) {
       <div class="sp-chips">${chips}</div>
       ${ebpfHtml ? `<div class="sp-sec">eBPF Programs</div>${ebpfHtml}` : ''}
       <div class="sp-sec">Event Keys <span style="font-size:10px;color:var(--text-dim)">(click to copy)</span></div>
+      ${splitKeysPresent ? `<div class="sp-note" style="margin-top:-2px;margin-bottom:6px">Suffixes like _TRACEPOINT and _NETFILTER mark multi-program eBPF variants.</div>` : ''}
       ${auditKeysHtml}
+      ${auditRulesHtml ? `<div class="sp-sec">Auditd Rules <span style="font-size:10px;color:var(--text-dim)">(click to copy)</span></div>${auditRulesHtml}` : ''}
       <div class="sp-sec">Referenced by Techniques (${techs.length})</div>
       ${(() => {
         const techRows = DATA.rows.filter(r => r.dc_id === dcId);
@@ -356,9 +372,9 @@ function openPanel(d) {
         ${DATA.stats.total_sub_techniques||29} sub-techniques<br>
         ${totalDets} detection strategies &nbsp;·&nbsp;
         ${totalDCs} data components<br>
-        ${DATA.stats.unique_audit_keys||214} unique audit keys
+        ${getDataStats().unique_audit_keys||uniqueEventKeyCount()||214} unique event keys
       </div>
-      <div class="sp-note" style="margin-top:6px">Click any node to view its details and associated eBPF programs.</div>
+      <div class="sp-note" style="margin-top:6px">Click any node to view its details, event keys, and associated eBPF programs.</div>
     `;
   }
   sp.classList.add('on');
@@ -863,7 +879,7 @@ function fmtCell(col, row) {
         : `<span style="font-size:11px">${v}</span>`;
     case 'audit_key':
       return v
-        ? `<span class="tag t-key" onclick="copy('${v}')" title="Click to copy">${v}</span>`
+        ? `<span class="tag t-key" onclick="copy('${v}')" title="Click to copy event key">${v}</span>`
         : empty;
     case 'log_source': {
       const isEbpf = v && v.startsWith('ebpf:');
@@ -1015,16 +1031,19 @@ function clearFilters() {
 //  DATASET PANEL
 // -------------------------------------------------------
 function initDatasetPanel() {
-  const s = DATA.stats;
+  const s = getDataStats();
+  const meta = getDataMeta();
   const metrics = [
-    { label: 'Tactics',              val: s.total_tactics                    || 13  },
-    { label: 'Techniques',           val: s.total_techniques_parent          || 179  },
-    { label: 'Sub-Techniques',       val: s.total_sub_techniques             || 247  },
-    { label: 'Detection Strategies', val: s.total_detection_strategies       || 341  },
-    { label: 'Analytics',            val: s.total_analytics                  || 341  },
-    { label: 'Data Components',      val: s.total_data_components_referenced || 19  },
-    { label: 'Unique Audit Keys',    val: s.unique_audit_keys                || 674 },
-    { label: 'eBPF Enriched Keys',  val: s.ebpf_rows                        || 160 },
+    { label: 'Tactics',               val: s.total_tactics                    || 13  },
+    { label: 'Techniques',            val: s.total_techniques_parent          || 179  },
+    { label: 'Sub-Techniques',        val: s.total_sub_techniques             || 247  },
+    { label: 'Detection Strategies',  val: s.total_detection_strategies       || 341  },
+    { label: 'Analytics',             val: s.total_analytics                  || 341  },
+    { label: 'Data Components',       val: s.total_data_components_referenced || 19   },
+    { label: 'Coverage Rows',         val: s.total_rows                       || getDataRows().length || 850 },
+    { label: 'Unique Event Keys',     val: s.unique_audit_keys                || uniqueEventKeyCount() || 738 },
+    { label: 'Program-Suffixed Keys', val: splitEventKeyCount()               || 0 },
+    { label: 'eBPF Rows',             val: s.ebpf_rows                        || 160 },
   ];
   const grid = document.getElementById('ds-grid');
   if (grid) {
@@ -1033,6 +1052,19 @@ function initDatasetPanel() {
         <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--accent);line-height:1">${m.val}</div>
         <div style="font-family:var(--body);font-size:10px;color:var(--text-dim);margin-top:5px;text-transform:uppercase;letter-spacing:.5px">${m.label}</div>
       </div>`).join('');
+  }
+
+  const schemaEl = document.getElementById('ds-key-schema');
+  if (schemaEl) {
+    const schema = meta.audit_key_schema || 'TA####_T####_###_DET####_DC####[_PROGRAM]';
+    const note = meta.audit_key_note || 'Event keys remain unique per ATT&CK coverage mapping, with optional suffixes for split multi-program eBPF variants.';
+    schemaEl.innerHTML = `
+      <h3 style="font-family:var(--title);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Event Key Schema</h3>
+      <div style="background:var(--bg2);border:1px solid var(--border);padding:16px 20px;margin-bottom:32px;">
+        <div style="font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:8px">${escHtml(schema)}</div>
+        <div style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.6">${escHtml(note)}</div>
+        <div style="font-family:var(--body);font-size:10px;color:var(--text-dim);margin-top:10px">Program-suffixed event keys currently present: ${splitEventKeyCount()}.</div>
+      </div>`;
   }
 
   // DC breakdown
@@ -1048,7 +1080,7 @@ function initDatasetPanel() {
       <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
         <span style="font-family:var(--mono);font-size:9px;color:var(--col-dc);background:#eaf4ec;border:1px solid #84b894;padding:2px 6px;white-space:nowrap">${id}</span>
         <span style="font-family:var(--body);font-size:11px;color:var(--text);flex:1">${v.name}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${v.keys.size} keys</span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${v.keys.size} event keys</span>
         <span style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">${v.channels.size} channels</span>
         ${v.url ? `<a href="${v.url}" target="_blank" rel="noopener noreferrer" style="font-size:9px;color:var(--accent);text-decoration:none">↗</a>` : ''}
       </div>`).join('');
@@ -1082,7 +1114,7 @@ function initDatasetPanel() {
       { label: 'Campaigns',           val: camps.length   },
       { label: 'Technique Mappings',  val: techTotal       },
       { label: 'Verified',            val: verifiedTotal   },
-      { label: 'Audit Keys',          val: keyTotal        },
+      { label: 'Event Keys',          val: keyTotal        },
     ];
     campGrid.innerHTML = campMetrics.map(m => `
       <div style="background:var(--bg2);border:1px solid var(--border);padding:16px 20px;border-radius:2px;border-left:3px solid #c87828;">
@@ -1275,7 +1307,7 @@ function initCampaignsPanel(){
     ['Technique mappings', totalTech],
     ['Verified', totalCovered],
     ['Unverified', totalUnverif],
-    ['Audit keys', totalKeys],
+    ['Event keys', totalKeys],
     ['Resolved', (CAMPAIGNS.join_statistics||{}).resolved||'—'],
   ];
   summary.innerHTML = stats.map(([k,v])=>`<div class="pill-stat"><div class="v">${escHtml(v)}</div><div class="k">${escHtml(k)}</div></div>`).join('');
@@ -1346,13 +1378,13 @@ function renderCampaignCard(c, techs){
     <th style="width:80px">Priority</th>
     <th style="width:60px">Weight</th>
     <th style="width:160px">eBPF channels</th>
-    <th style="width:50px">Keys</th>
+    <th style="width:80px">Event Keys</th>
   </tr></thead><tbody></tbody>`;
   const tb = tbl.querySelector('tbody');
   techs.forEach(t=>{
     const tactics = (t.tactic_ids||[]).join(', ');
     const ebpf = (t.ebpf_channels||[]).map(ch=>`<span class="tag-chip ebpf">${escHtml(ch.replace('ebpf:',''))}</span>`).join('');
-    const verif = t.coverage_verified ? '' : ` <span class="tag-chip unverif" title="No coverage in audit registry">unverified</span>`;
+    const verif = t.coverage_verified ? '' : ` <span class="tag-chip unverif" title="No current coverage mapping">unverified</span>`;
     const keys = (t.audit_keys||[]).length;
     const tr = document.createElement('tr');
     tr.className='tech-row';
@@ -1388,7 +1420,7 @@ function renderCampaignCard(c, techs){
 
 function renderCoverageBlocks(t){
   if (!t.coverage || t.coverage.length===0){
-    return `<div style="color:var(--text-dim);font-style:italic;">No coverage entries — ${escHtml(t.technique_id)} has no Linux audit-registry mapping in this dataset (coverage_verified=${escHtml(String(t.coverage_verified))}).</div>`;
+    return `<div style="color:var(--text-dim);font-style:italic;">No coverage entries — ${escHtml(t.technique_id)} has no current Linux coverage mapping in this dataset (coverage_verified=${escHtml(String(t.coverage_verified))}).</div>`;
   }
   const groups = new Map();
   t.coverage.forEach(c=>{
@@ -1403,7 +1435,7 @@ function renderCoverageBlocks(t){
   const out=[];
   groups.forEach(v=>{
     if (v.unresolved){
-      out.push(`<div class="cov-block" style="border-left-color:var(--text-dim);"><div class="cov-head">UNRESOLVED audit_key (not present in coverage v5)</div><div class="cov-dc">${escHtml(v.audit_key)}</div></div>`);
+      out.push(`<div class="cov-block" style="border-left-color:var(--text-dim);"><div class="cov-head">UNRESOLVED event key (not present in the current coverage dataset)</div><div class="cov-dc">${escHtml(v.audit_key)}</div></div>`);
       return;
     }
     const c = v.det;
