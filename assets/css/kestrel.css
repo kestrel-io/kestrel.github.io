@@ -222,6 +222,7 @@ html,body{
   position:relative;overflow:hidden;
   background: url('../img/kestrel-transparent-003.png') no-repeat;
 }
+
 .twrap::before{
   content:'';
   position:absolute;inset:0;
@@ -413,12 +414,8 @@ body.home-body{
   min-height:100vh;
   overflow-y:auto;
   background-color: var(--bg);
-  background-image:
-    linear-gradient(rgba(205,207,206,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(205,207,206,.04) 1px,transparent 1px),
-    url('../img/kestrel-transparent-003.png') no-repeat;
-  background-size: 40px 40px, 40px 40px, auto 100vh;
   position:relative;overflow:hidden;
+  background: url('../img/kestrel-transparent-003.png') no-repeat;
 }
 .home-hero{
   flex:none;display:flex;flex-direction:column;align-items:center;
