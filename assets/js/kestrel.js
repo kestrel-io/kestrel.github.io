@@ -405,19 +405,35 @@ function buildNameMaps() {
 // Rebuild a <select> to show only values present in `rows`.
 // `labelFn` maps a raw value → display string.
 // Preserves the current selection when it is still valid; resets to '' otherwise.
+//
+// Edge compatibility: saving an el.options[0] reference then clearing via
+// innerHTML = '' can silently invalidate the saved node in Edge, causing the
+// sentinel ("All …") option to disappear and all cascade rebuilds to break.
+// We avoid this by (1) reading only the sentinel's text/value before touching
+// the DOM, (2) removing options with the typed HTMLSelectElement API which is
+// spec-guaranteed across all browsers, and (3) constructing a fresh sentinel.
 function rebuildSelect(el, rows, field, labelFn) {
-  const prev  = el.value;
-  const vals  = [...new Set(rows.map(r => r[field]).filter(Boolean))].sort();
-  const first = el.options[0];       // "All …" sentinel
-  el.innerHTML = '';
-  el.appendChild(first);
+  const prev     = el.value;
+  const sentVal  = el.options[0] ? el.options[0].value : '';
+  const sentText = el.options[0] ? el.options[0].text  : '';
+  const vals     = [...new Set(rows.map(r => r[field]).filter(Boolean))]
+    .sort((a, b) => String(a).localeCompare(String(b)));
+
+  while (el.options.length > 0) el.options[0].remove();
+
+  const sentinel = document.createElement('option');
+  sentinel.value = sentVal;
+  sentinel.text  = sentText;
+  el.appendChild(sentinel);
+
   vals.forEach(v => {
     const o = document.createElement('option');
     o.value = v;
-    o.textContent = labelFn ? labelFn(v) : v;
+    o.text  = labelFn ? labelFn(v) : v;
     el.appendChild(o);
   });
-  el.value = vals.includes(prev) ? prev : '';
+
+  el.value = vals.includes(prev) ? prev : sentVal;
 }
 
 /* ── Rows that satisfy a partial constraint object ──────────────── */

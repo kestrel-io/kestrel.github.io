@@ -150,9 +150,9 @@ html,body{
 
 .canvas{
   flex:1;min-height:0;
-  position:relative;overflow:hidden;background:var(--bg);
+  position:relative;overflow:hidden;
+  background: url('../img/kestrel-transparent-003.png') no-repeat;
 }
-/* kestrel bg handled by fixed SVG element */
 .canvas > *{position:relative;z-index:1}
 .twrap > *{position:relative;z-index:1}
 .mitre-overlay{
@@ -173,7 +173,7 @@ html,body{
   display:block;
   width:100%;
   height:100%;
-  background: transparent url('../img/kestrel-transparent-003.png') no-repeat;
+  background: transparent;
 }
 .canvas::before{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
@@ -219,12 +219,8 @@ html,body{
 #rcount b{color:var(--accent)}
 
 .twrap{
-  flex:1;min-height:0;overflow:auto;
-  background-image: url('../img/kestrel-transparent-003.png');
-  background-size:40%;
-  background-position:center;
-  background-repeat:no-repeat;
-  position:relative;
+  position:relative;overflow:hidden;
+  background: url('../img/kestrel-transparent-003.png') no-repeat;
 }
 .twrap::before{
   content:'';
@@ -416,9 +412,13 @@ body.home-body{
   height:auto;
   min-height:100vh;
   overflow-y:auto;
-  background:
-    linear-gradient(rgba(28,28,22,.84),rgba(28,28,22,.84)),
-    url('../img/kestrel-transparent-003.png') no-repeat fixed;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgba(205,207,206,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(205,207,206,.04) 1px,transparent 1px),
+    url('../img/kestrel-transparent-003.png') no-repeat;
+  background-size: 40px 40px, 40px 40px, auto 100vh;
+  position:relative;overflow:hidden;
 }
 .home-hero{
   flex:none;display:flex;flex-direction:column;align-items:center;
