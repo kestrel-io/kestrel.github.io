@@ -224,10 +224,11 @@ html,body{
 }
 
 .twrap::before{
-  content:'';
-  position:absolute;inset:0;
-  background:rgba(28,28,22,.72);
-  pointer-events:none;z-index:0;
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(205,207,206,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(205,207,206,.04) 1px,transparent 1px);
+  background-size:40px 40px;
 }
 .twrap table{position:relative;z-index:1}
 table{width:100%;border-collapse:collapse}
@@ -413,9 +414,15 @@ body.home-body{
   height:auto;
   min-height:100vh;
   overflow-y:auto;
+  background-image:
+    linear-gradient(rgba(205,207,206,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(205,207,206,.04) 1px,transparent 1px),
+    url('../img/kestrel-transparent-003.png');
+  background-size: 40px 40px, 40px 40px, auto;
+  background-position: 0 0, 0 0, 0 0;
+  background-repeat: repeat, repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed;
   background-color: var(--bg);
-  position:relative;overflow:hidden;
-  background: url('../img/kestrel-transparent-003.png') no-repeat;
 }
 .home-hero{
   flex:none;display:flex;flex-direction:column;align-items:center;
