@@ -413,27 +413,24 @@ function buildNameMaps() {
 // the DOM, (2) removing options with the typed HTMLSelectElement API which is
 // spec-guaranteed across all browsers, and (3) constructing a fresh sentinel.
 function rebuildSelect(el, rows, field, labelFn) {
+  if (!el) return;
+
   const prev     = el.value;
   const sentVal  = el.options[0] ? el.options[0].value : '';
   const sentText = el.options[0] ? el.options[0].text  : '';
-  const vals     = [...new Set(rows.map(r => r[field]).filter(Boolean))]
+  const vals     = Array.from(new Set(rows.map(r => r[field]).filter(Boolean)))
     .sort((a, b) => String(a).localeCompare(String(b)));
 
-  while (el.options.length > 0) el.options[0].remove();
-
-  const sentinel = document.createElement('option');
-  sentinel.value = sentVal;
-  sentinel.text  = sentText;
-  el.appendChild(sentinel);
+  // Edge is sensitive to per-option remove() during active change handlers.
+  // Rebuild through the select element API to keep value/index state stable.
+  el.length = 0;
+  el.add(new Option(sentText, sentVal));
 
   vals.forEach(v => {
-    const o = document.createElement('option');
-    o.value = v;
-    o.text  = labelFn ? labelFn(v) : v;
-    el.appendChild(o);
+    el.add(new Option(labelFn ? labelFn(v) : v, v));
   });
 
-  el.value = vals.includes(prev) ? prev : sentVal;
+  el.selectedIndex = vals.includes(prev) ? (vals.indexOf(prev) + 1) : 0;
 }
 
 /* ── Rows that satisfy a partial constraint object ──────────────── */
@@ -489,6 +486,7 @@ function populateVizFilters() {
   ['vf-tac', 'vf-tech', 'vf-dc'].forEach(id =>
     document.getElementById(id).addEventListener('change', cascadeViz));
   document.getElementById('vf-q').addEventListener('input', cascadeViz);
+  populateVizFilters._cascade = cascadeViz;
 }
 
 // ── Per-node row-matching check ────────────────────────────────────────────
@@ -849,7 +847,8 @@ if (_btnReset) _btnReset.onclick = function() {
     document.getElementById(id).value = '');
   document.getElementById('vf-q').value = '';
   vfTac = vfTech = vfDC = vfQ = '';
-  if (typeof cascadeViz === 'function') cascadeViz();
+  if (populateVizFilters._cascade) populateVizFilters._cascade();
+  else applyVizFilter();
   initForce();
 };
 /* -------------------------------------------------------
@@ -859,16 +858,67 @@ let tData = DATA.rows.slice();
 let sCol  = 'tac_id', sAsc = true;
 let tableInited = false;
 
+function buildTableDetailTarget(row) {
+  if (row.det_id) {
+    return {
+      type: 'det',
+      id: row.det_id,
+      name: row.det_name,
+      url: row.det_url || '',
+    };
+  }
+  if (row.sub_id) {
+    return {
+      type: 'subtechnique',
+      id: row.sub_id,
+      name: row.sub_name,
+      url: row.sub_url || '',
+    };
+  }
+  if (row.tech_id) {
+    return {
+      type: 'technique',
+      id: row.tech_id,
+      name: row.tech_name,
+      url: row.tech_url || '',
+    };
+  }
+  if (row.tac_id) {
+    return {
+      type: 'tactic',
+      id: row.tac_id,
+      name: row.tac_name,
+      url: row.tac_url || '',
+    };
+  }
+  return { type: 'root', name: 'Coverage Summary', url: '' };
+}
+
+function getTableDetailTarget(row) {
+  return buildTableDetailTarget(row);
+}
+
 function fmtCell(col, row) {
   const v = row[col];
   const empty = `<span style="color:var(--text-dim)">—</span>`;
-  if (!v && col!=='sub_id') return empty;
+  if (col !== 'details' && !v && col!=='sub_id') return empty;
 
   const extBtn = (url) => url
     ? `<a class="ext-link" href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open on MITRE ATT&CK">↗</a>`
     : '';
 
   switch(col) {
+    case 'details': {
+      const target = getTableDetailTarget(row);
+      const href = target.url || '#';
+      return `<a class="details-link" href="${href}" data-detail-key="${row.audit_key || ''}" title="Open details panel" aria-label="Open details panel" onclick="event.preventDefault()">
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M8 1.75c3.45 0 6.25 2.8 6.25 6.25S11.45 14.25 8 14.25 1.75 11.45 1.75 8 4.55 1.75 8 1.75Z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M8 7v3.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="8" cy="4.8" r="0.9" fill="currentColor"/>
+        </svg>
+      </a>`;
+    }
     case 'tac_id':
       return `<a class="tag t-tac" href="${row.tac_url||'#'}" target="_blank" rel="noopener noreferrer">${v} ↗</a>
               <div class="td-dim" style="margin-top:2px">${row.tac_name}</div>`;
@@ -888,11 +938,8 @@ function fmtCell(col, row) {
     case 'an_desc':
       return `<div class="td-dim">${v}</div>`;
     case 'dc_id':
-      return `<a class="tag t-dc" href="${row.dc_url||'#'}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${v} ↗</a>`;
-    case 'dc_name':
-      return row.dc_url
-        ? `<a style="font-size:11px;color:var(--text);text-decoration:none;" href="${row.dc_url}" target="_blank" rel="noopener noreferrer">${v} <span style="opacity:.5;font-size:8px">↗</span></a>`
-        : `<span style="font-size:11px">${v}</span>`;
+      return `<a class="tag t-dc" href="${row.dc_url||'#'}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${v} ↗</a>
+              <div class="td-dim" style="margin-top:2px">${row.dc_name || ''}</div>`;
     case 'audit_key':
       return v
         ? `<span class="tag t-key" onclick="copy('${v}')" title="Click to copy event key">${v}</span>`
@@ -913,6 +960,12 @@ function fmtCell(col, row) {
         : empty;
     default: return v || empty;
   }
+}
+
+function openTableDetails(detailKey) {
+  const row = DATA.rows.find(r => (r.audit_key || '') === detailKey);
+  if (!row) return;
+  openPanel({ data: buildTableDetailTarget(row) });
 }
 
 function openDCFromTable(dcId) {
@@ -959,13 +1012,19 @@ function applyFilters() {
 }
 
 function renderTable() {
-  const cols=['tac_id','tech_id','sub_id','dc_id','dc_name','audit_key','ebpf_program','ebpf_weight','log_source','event'];
+  const cols=['details','tac_id','tech_id','sub_id','dc_id','audit_key'];
   const tbody = document.getElementById('tbody');
   tbody.innerHTML =
-    tData.map(r=>`<tr>${cols.map(c=>`<td>${fmtCell(c,r)}</td>`).join('')}</tr>`).join('');
+    tData.map(r=>`<tr>${cols.map(c=>`<td${c==='details' ? ' class="td-details"' : ''}>${fmtCell(c,r)}</td>`).join('')}</tr>`).join('');
   document.getElementById('rn').textContent = tData.length;
   document.getElementById('rt').textContent = DATA.rows.length;
   // JS delegation — covers all rows regardless of scroll position or count
+  tbody.onclick = e => {
+    const btn = e.target.closest('.details-link');
+    if (!btn || btn.closest('tbody') !== tbody) return;
+    e.stopPropagation();
+    openTableDetails(btn.dataset.detailKey || '');
+  };
   tbody.onmouseover = e => {
     const tr = e.target.closest('tr');
     if (tr && tr.parentNode === tbody) tr.classList.add('row-hl');
@@ -1025,6 +1084,7 @@ function initTable() {
   document.querySelectorAll('#tbl th').forEach(th => {
     th.addEventListener('click', () => {
       const c = th.dataset.c;
+      if (!c) return;
       document.querySelectorAll('#tbl th').forEach(h => h.classList.remove('sa','sd'));
       if (sCol === c) sAsc = !sAsc; else { sCol = c; sAsc = true; }
       th.classList.add(sAsc ? 'sa' : 'sd');

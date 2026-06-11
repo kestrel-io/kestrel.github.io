@@ -219,7 +219,12 @@ html,body{
 #rcount b{color:var(--accent)}
 
 .twrap{
-  position:relative;overflow:hidden;
+  flex:1;
+  min-height:0;
+  position:relative;
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
   background: url('../img/kestrel-transparent-003.png') no-repeat;
 }
 
@@ -230,7 +235,7 @@ html,body{
     linear-gradient(90deg,rgba(205,207,206,.04) 1px,transparent 1px);
   background-size:40px 40px;
 }
-.twrap table{position:relative;z-index:1}
+.twrap table{position:relative;z-index:1;width:max-content;min-width:100%;}
 table{width:100%;border-collapse:collapse}
 thead{position:sticky;top:0;z-index:10}
 thead tr{background:var(--bg3)}
@@ -242,6 +247,8 @@ th{
   user-select:none;
 }
 th:hover{background:var(--bg4);color:var(--text)}
+th.th-details{cursor:default}
+th.th-details:hover{background:var(--bg3);color:var(--accent)}
 th.sa::after{content:' ▲';color:var(--accent);font-size:9px}
 th.sd::after{content:' ▼';color:var(--accent2);font-size:9px}
 td{
@@ -249,11 +256,47 @@ td{
   border-bottom:1px solid var(--border);
   border-right:1px solid var(--border);
   max-width:240px;
-  background:var(--bg2);
+  background:transparent;
 }
-tr:nth-child(even) td{background:var(--bg3)}
-#cov-table tbody tr:hover td,
-#cov-table tbody tr.row-hl td{background:rgba(200,120,40,.10)!important}
+
+.td-details{
+  width:68px;
+  min-width:68px;
+  text-align:center;
+  vertical-align:middle;
+}
+.details-link{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:30px;
+  height:30px;
+  border:1px solid rgba(200,120,40,.38);
+  border-radius:50%;
+  background:rgba(200,120,40,.1);
+  color:var(--accent);
+  cursor:pointer;
+  transition:border-color .14s, background .14s, color .14s, transform .14s;
+}
+.details-link:hover{
+  border-color:var(--accent);
+  background:rgba(200,120,40,.18);
+  color:var(--text-hi);
+  transform:translateY(-1px);
+}
+.details-link:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 2px rgba(200,120,40,.2);
+  border-color:var(--accent);
+}
+.details-link svg{
+  width:14px;
+  height:14px;
+  pointer-events:none;
+}
+tr:nth-child(even) td{background:transparent}
+#tbl tbody tr:hover td,
+#tbl tbody tr.row-hl td{background:var(--bg3)!important}
 .tag{display:inline-block;font-family:var(--mono);font-size:10.5px;
   padding:2px 6px;font-weight:500;white-space:nowrap;cursor:pointer;
   text-decoration:none}
