@@ -52,11 +52,6 @@ detections:
     window: "90s"
     context_key: uid
     cooldown: "300s"
-    tactics:
-      TA0003: { name: "Persistence", base_severity: high }
-    technique:
-      id: "T1098.004"
-      confidence: 0.90
     events:
       TA0003_T1098_004_DC0039:
         program: BPF_PROG_TYPE_LSM
@@ -77,11 +72,16 @@ detections:
         filters:
           - comm contains [ sshd, bash, sh, ansible ]
           - exe not contains [ sshd, ssh-keygen, ssh-copy-id ]
+    includes:
+      - interactive_shellsunprivileged_users
+      - unprivileged_users
+    excludes:
+      - ignored_programs
     actions:
       - log
       - notify
       - isolation</pre>
-      <p class="home-sub" style="font-size:10px;margin-top:10px;color:rgba(255,255,255,.55);">Coverage pages now use the enriched event-key schema <code>TA####_T####_###_DET####_DC####[_PROGRAM]</code>. Runtime rule examples may still use shorter rule IDs.</p>
+      <p class="home-sub" style="font-size:10px;margin-top:10px;color:rgba(255,255,255,.55);">Coverage pages now use the enriched event-key schema <code>TA####_T####_###_DET####_DC####[_PROGRAM]</code>. Runtime rule examples may still use shorter rule IDs.</p><br>
     </div>
   </div>
   <div class="home-stat-row">

@@ -3,9 +3,9 @@
 ------------------------------------------------------- */
 const TC = {
   root:'#cdcfce', tactic:'#c87828', technique:'#a8a878',
-  subtechnique:'#7a9878', det:'#c09060', dc:'#68a878'
+  subtechnique:'#7a9878', an:'#c09060', det:'#c09060', dc:'#68a878'
 };
-const TR = { root:13, tactic:11, technique:9, subtechnique:7, det:5, dc:4 };
+const TR = { root:13, tactic:11, technique:9, subtechnique:7, an:5, det:5, dc:4 };
 const TAC_COL = {
   TA0001:'#c87828', TA0002:'#a07838', TA0003:'#7a9878', TA0004:'#8a9870',
   TA0005:'#9890a0', TA0006:'#c06840', TA0007:'#68a878', TA0008:'#7888a8',
@@ -16,7 +16,7 @@ const LGND = [
   {type:'tactic',       label:'Tactic'},
   {type:'technique',    label:'Technique'},
   {type:'subtechnique', label:'Sub-Technique'},
-  {type:'det',          label:'Detection Strategy'},
+  {type:'an',           label:'Analytic'},
   {type:'dc',           label:'Data Component'},
 ];
 
@@ -49,6 +49,7 @@ function showTip(e, d) {
     const variant = getProgramSuffix(data.id||'');
     meta = `${data.ebpf_program ? data.ebpf_program.replace('BPF_PROG_TYPE_','') + ' · ' : ''}${data.log_source||''}<br>Event Key: ${data.id||''}${variant ? `<br>Variant: ${variant}` : ''}`;
   }
+  if (t === 'an') meta = data.desc || id;
   if (t === 'det') meta = id;
   if (t === 'tactic') meta = id;
   const hasUrl = !!data.url;
@@ -146,16 +147,25 @@ function openPanel(d) {
     return `<a class="sp-link ${cls}" href="${url}" target="_blank" rel="noopener noreferrer"${th}>${text}<span class="sp-ext">↗</span></a>`;
   }
 
-  // Render detection strategy rows — each row is a linked DET ID + name
-  function detRows(rows) {
-    const dets = uniqueBy(rows,
-      r => r.det_id,
-      r => ({ id: r.det_id, name: r.det_name, url: r.det_url })
+  // Render analytic rows — each row is a linked AN ID + description,
+  // annotated with its parent detection strategy for context.
+  function analyticRows(rows) {
+    const analytics = uniqueBy(rows,
+      r => r.an_id,
+      r => ({
+        id: r.an_id,
+        name: r.an_desc,
+        url: r.an_url,
+        det_id: r.det_id,
+        det_name: r.det_name,
+        det_url: r.det_url,
+      })
     );
-    return dets.map(({ label: l }) => `
-      <div class="sp-tech-row">
-        ${lnk('sp-link-det', l.url, l.id)}
-        <span class="sp-row-name">${lnk('sp-link-det', l.url, l.name)}</span>
+    return analytics.map(({ label: l }) => `
+      <div class="sp-tech-row" style="flex-direction:column;align-items:flex-start;gap:2px">
+        ${lnk('sp-link-an', l.url, l.id)}
+        <span class="sp-row-desc">${l.name || ''}</span>
+        ${l.det_id ? `<span class="sp-row-desc" style="font-size:10px;color:var(--text-dim)">Detection Strategy: ${lnk('sp-link-det', l.det_url, l.det_id)}${l.det_name ? ` · ${l.det_name}` : ''}</span>` : ''}
       </div>`).join('');
   }
 
@@ -271,8 +281,8 @@ function openPanel(d) {
           ${lnk('sp-link-tech', l.url, l.id)}
           <span class="sp-row-name">${lnk('sp-link-tech', l.url, l.name)}</span>
         </div>`).join('')}
-      <div class="sp-sec">Detection Strategies (${uniqueBy(tRows, r=>r.det_id, r=>r).length})</div>
-      ${detRows(tRows)}
+      <div class="sp-sec">Analytics (${uniqueBy(tRows, r=>r.an_id, r=>r).length})</div>
+      ${analyticRows(tRows)}
       <div class="sp-sec">Data Components (${Object.keys((() => { const m={}; tRows.forEach(r=>{if(r.dc_id)m[r.dc_id]=1;}); return m; })()).length})</div>
       ${dcRows(tRows)}
     `;
@@ -304,14 +314,8 @@ function openPanel(d) {
             ${lnk('sp-link-sub', l.url, l.id)}
             <span class="sp-row-name">${lnk('sp-link-sub', l.url, l.name)}</span>
           </div>`).join('')}` : ''}
-      <div class="sp-sec">Detection Strategies (${uniqueBy(tRows, r=>r.det_id, r=>r).length})</div>
-      ${detRows(tRows)}
       <div class="sp-sec">Analytics (${analytics.length})</div>
-      ${analytics.map(({label:l}) => `
-        <div class="sp-tech-row" style="flex-direction:column;align-items:flex-start;gap:2px">
-          ${lnk('sp-link-an', l.url, l.id)}
-          <span class="sp-row-desc">${l.desc}</span>
-        </div>`).join('')}
+      ${analyticRows(tRows)}
       <div class="sp-sec">Data Components (${Object.keys((() => { const m={}; tRows.forEach(r=>{if(r.dc_id)m[r.dc_id]=1;}); return m; })()).length})</div>
       ${dcRows(tRows)}
     `;
@@ -326,36 +330,34 @@ function openPanel(d) {
       <div class="sp-badge">${data.id}</div>
       <div class="sp-name">${data.name}</div>
       ${mitreLink}
-      <div class="sp-sec">Detection Strategies (${uniqueBy(tRows, r=>r.det_id, r=>r).length})</div>
-      ${detRows(tRows)}
       <div class="sp-sec">Analytics (${analytics.length})</div>
-      ${analytics.map(({label:l}) => `
-        <div class="sp-tech-row" style="flex-direction:column;align-items:flex-start;gap:2px">
-          ${lnk('sp-link-an', l.url, l.id)}
-          <span class="sp-row-desc">${l.desc}</span>
-        </div>`).join('')}
+      ${analyticRows(tRows)}
       <div class="sp-sec">Data Components (${Object.keys((() => { const m={}; tRows.forEach(r=>{if(r.dc_id)m[r.dc_id]=1;}); return m; })()).length})</div>
       ${dcRows(tRows)}
     `;
 
-  // ── DET ──────────────────────────────────────────────────────────────────
-  } else if (t === 'det') {
-    const children = d.children || d._children || [];
-    const tRows    = DATA.rows.filter(r => r.det_id === data.id);
-    const analytics = uniqueBy(tRows, r => r.an_id,
-      r => ({ id: r.an_id, desc: r.an_desc, url: r.an_url })
+  // ── ANALYTIC ─────────────────────────────────────────────────────────────
+  } else if (t === 'an') {
+    const tRows    = DATA.rows.filter(r =>
+      r.an_id === data.id &&
+      (!data.tac_id || r.tac_id === data.tac_id) &&
+      (!data.tech_id || r.tech_id === data.tech_id) &&
+      (!data.sub_id || r.sub_id === data.sub_id) &&
+      (!data.det_id || r.det_id === data.det_id)
     );
+    const row0     = tRows[0] || {};
+    const dcCount  = uniqueBy(tRows, r => r.dc_id, r => r).length;
     body.innerHTML = `
       <div class="sp-badge">${data.id}</div>
-      <div class="sp-name">${data.name}</div>
+      <div class="sp-name">${data.name || data.id}</div>
+      ${data.desc ? `<div class="sp-desc">${data.desc}</div>` : ''}
       ${mitreLink}
-      <div class="sp-sec">Analytics (${analytics.length})</div>
-      ${analytics.map(({label:l}) => `
-        <div class="sp-tech-row" style="flex-direction:column;align-items:flex-start;gap:2px">
-          ${lnk('sp-link-an', l.url, l.id)}
-          <span class="sp-row-desc">${l.desc}</span>
-        </div>`).join('')}
-      <div class="sp-sec">Data Components (${children.length})</div>
+      ${row0.det_id ? `<div class="sp-sec">Detection Strategy</div>
+      <div class="sp-tech-row">
+        ${lnk('sp-link-det', row0.det_url, row0.det_id)}
+        <span class="sp-row-name">${lnk('sp-link-det', row0.det_url, row0.det_name || row0.det_id)}</span>
+      </div>` : ''}
+      <div class="sp-sec">Data Components (${dcCount})</div>
       ${dcRows(tRows)}
     `;
 
@@ -529,7 +531,14 @@ function nodeMatchesRows(d) {
 
 function nodeMatchesText(d) {
   if (!vfQ) return true;
-  const s = ((d.data?.name||'') + ' ' + (d.data?.id||'') + ' ' + (d.data?.dc_id||'')).toLowerCase();
+  const s = [
+    d.data?.name || '',
+    d.data?.id || '',
+    d.data?.dc_id || '',
+    d.data?.desc || '',
+    d.data?.det_id || '',
+    d.data?.det_name || '',
+  ].join(' ').toLowerCase();
   return s.includes(vfQ);
 }
 
@@ -651,10 +660,10 @@ function initForce() {
 
   // ── Seed initial positions on concentric rings ──────────────────────────
   // This gives the simulation a structured starting state: tactics on the
-  // outer ring, techniques on the next, sub-techniques / DET / DC progressively
+  // outer ring, techniques on the next, sub-techniques / AN / DC progressively
   // closer to centre. The forces then pull the graph into its natural layout
   // while the perimeter origin keeps tactic-level links visually clear.
-  const RING = { root:0, tactic:740, technique:460, subtechnique:300, det:190, dc:100 };
+  const RING = { root:0, tactic:740, technique:460, subtechnique:300, an:190, det:190, dc:100 };
   const typeCount = {};
   nodes.forEach(d => {
     const t = d.data?.type || 'root';
@@ -770,7 +779,7 @@ function initForce() {
   function labelText(d) {
     const nm = d.data?.name || '';
     const t  = d.data?.type;
-    const mx = !t?32 : t==='tactic'?24 : t==='technique'?22 : t==='subtechnique'?20 : t==='det'?18 : 16;
+    const mx = !t?32 : t==='tactic'?24 : t==='technique'?22 : t==='subtechnique'?20 : t==='an'?18 : t==='det'?18 : 16;
     return nm.length > mx ? nm.slice(0,mx)+'…' : nm;
   }
 
@@ -859,6 +868,21 @@ let sCol  = 'tac_id', sAsc = true;
 let tableInited = false;
 
 function buildTableDetailTarget(row) {
+  if (row.an_id) {
+    return {
+      type: 'an',
+      id: row.an_id,
+      name: row.an_id,
+      desc: row.an_desc,
+      tac_id: row.tac_id,
+      tech_id: row.tech_id,
+      sub_id: row.sub_id || '',
+      det_id: row.det_id,
+      det_name: row.det_name,
+      det_url: row.det_url || '',
+      url: row.an_url || '',
+    };
+  }
   if (row.det_id) {
     return {
       type: 'det',
@@ -934,7 +958,8 @@ function fmtCell(col, row) {
       return `<a class="tag t-det" href="${row.det_url||'#'}" target="_blank" rel="noopener noreferrer">${v} ↗</a>
               <div class="td-dim" style="margin-top:2px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.det_name}</div>`;
     case 'an_id':
-      return `<a class="tag t-an" href="${row.an_url||'#'}" target="_blank" rel="noopener noreferrer">${v} ↗</a>`;
+      return `<a class="tag t-an" href="${row.an_url||'#'}" target="_blank" rel="noopener noreferrer">${v} ↗</a>
+              <div class="td-dim" style="margin-top:2px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.an_desc || ''}</div>`;
     case 'an_desc':
       return `<div class="td-dim">${v}</div>`;
     case 'dc_id':
@@ -1012,7 +1037,7 @@ function applyFilters() {
 }
 
 function renderTable() {
-  const cols=['details','tac_id','tech_id','sub_id','dc_id','audit_key'];
+  const cols=['details','tac_id','tech_id','sub_id','an_id','dc_id','audit_key'];
   const tbody = document.getElementById('tbody');
   tbody.innerHTML =
     tData.map(r=>`<tr>${cols.map(c=>`<td${c==='details' ? ' class="td-details"' : ''}>${fmtCell(c,r)}</td>`).join('')}</tr>`).join('');
@@ -1132,7 +1157,7 @@ function initDatasetPanel() {
 
   const schemaEl = document.getElementById('ds-key-schema');
   if (schemaEl) {
-    const schema = meta.audit_key_schema || 'TA####_T####_###_DET####_DC####[_PROGRAM]';
+    const schema = meta.audit_key_schema || 'TA####_T####_###_AN####_DC####[_PROGRAM]';
     const note = meta.audit_key_note || 'Event keys remain unique per ATT&CK coverage mapping, with optional suffixes for split multi-program eBPF variants.';
     schemaEl.innerHTML = `
       <h3 style="font-family:var(--title);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Event Key Schema</h3>
