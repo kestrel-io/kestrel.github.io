@@ -1,0 +1,14 @@
+{
+  "title": "",
+  "date": "",
+  "tldr": "",
+  "contents": [
+    "",
+    "## header",
+    "",
+    "Every item in `contents` is rendered as its own block, and markdown is supported throughout:\n\n- **bold**, *italic* and `inline code`\n- links such as [MITRE ATT&CK](https://attack.mitre.org/)\n- headings, lists, quotes, tables and fenced code",
+    "```yaml\ndetections:\n  ssh_authorized_keys_manipulation:\n    threshold: 0.70\n```",
+    "> Use the filters above to jump to a date, open a single entry, or search across everything. Clicking a tag searches for it."
+  ],
+  "tags": ["meta", "site", "journal"]
+}
