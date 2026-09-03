@@ -29,25 +29,42 @@ fi
 outputs() {
   ls assets/js/*.min.js assets/data/*.min.js assets/journal/journal.min.json ./*.html 2>/dev/null | sed 's#^\./##'
 }
-snapshot() { for f in $(outputs); do printf '%s %s\n' "$f" "$(git hash-object "$f")"; done | sort; }
-
 dirty_before=$(git diff --name-only)
-before=$(snapshot)
 tools/build-assets.sh "${flags[@]}"
-after=$(snapshot)
 
-# Stage what the build changed or created, plus any output git does not track yet.
-changed=$(comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | cut -d' ' -f1)
-untracked=$(git ls-files --others --exclude-standard -- $(outputs) 2>/dev/null || true)
-to_add=$(printf '%s\n%s\n' "$changed" "$untracked" | sed '/^$/d' | sort -u)
+# Stage every generated file that does not match its source: the ones this run
+# rebuilt, ones an earlier manual build left modified, and ones git has never
+# seen. A generated file left behind means the deployed page loads stale code.
+to_add=""
+for f in $(outputs); do
+  case "$f" in
+    *.html)
+      # Pages are only swept in when their diff touches a script tag, so an
+      # unrelated edit in flight is never pulled into someone else's commit.
+      if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+        git diff --quiet -- "$f" && continue
+        git diff -U0 -- "$f" | grep -qE '^[+-][[:space:]]*<script[[:space:]]+src=' || continue
+      fi
+      ;;
+    *)
+      if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+        git diff --quiet -- "$f" && continue
+      fi
+      ;;
+  esac
+  to_add="$to_add$f
+"
+done
+to_add=$(printf '%s' "$to_add" | sed '/^$/d' | sort -u)
+
 if [ -n "$to_add" ]; then
   for f in $to_add; do
     if printf '%s\n' "$dirty_before" | grep -qx "$f"; then
-      echo "pre-commit: note — $f also had unstaged edits; the whole file is now staged" >&2
+      echo "pre-commit: note - $f also had unstaged edits; the whole file is now staged" >&2
     fi
   done
   git add -- $to_add
-  echo "pre-commit: staged $(printf '%s\n' "$to_add" | wc -l | tr -d ' ') generated/updated file(s)"
+  echo "pre-commit: staged $(printf '%s\n' "$to_add" | wc -l | tr -d ' ') generated file(s)"
 fi
 
 # Many working copies in this tree carry a stray +x bit that would land in the

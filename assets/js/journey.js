@@ -27,6 +27,7 @@
      instead of one per entry). Falls back to the manifest when absent. */
   const BUNDLE      = JOURNAL_DIR + 'journal.min.json';
   const TITLE_MAX   = 48;
+  const PAGE_SIZE   = 3;   /* entries shown per page, newest first */
 
   /* ── pure helpers ─────────────────────────────────── */
   function esc(s) {
@@ -152,6 +153,33 @@
     });
   }
 
+  /* Slice a filtered list into one page. `page` is 1-based and clamped, so
+     a shrinking result set never strands the reader on an empty page. */
+  function paginate(list, page, size = PAGE_SIZE) {
+    const total = list.length;
+    const pageCount = Math.max(1, Math.ceil(total / size));
+    const current = Math.min(Math.max(1, Math.floor(page) || 1), pageCount);
+    const start = (current - 1) * size;
+    const end = Math.min(start + size, total);
+    return { page: current, pageCount, total, start, end, items: list.slice(start, end) };
+  }
+
+  /* Page numbers to show: always the first and last, plus a window around the
+     current page, with gaps marked by null. */
+  function pageWindow(current, pageCount, span = 1) {
+    const keep = new Set([1, pageCount]);
+    for (let p = current - span; p <= current + span; p++) {
+      if (p >= 1 && p <= pageCount) keep.add(p);
+    }
+    const sorted = [...keep].sort((a, b) => a - b);
+    const out = [];
+    sorted.forEach((p, i) => {
+      if (i && p - sorted[i - 1] > 1) out.push(null);
+      out.push(p);
+    });
+    return out;
+  }
+
   /* ── loading ──────────────────────────────────────── */
   function resolveFile(name) {
     const n = String(name).replace(/^\.\//, '');
@@ -232,6 +260,24 @@
 </article>`;
   }
 
+  function renderPager(info) {
+    if (info.pageCount <= 1) return '';
+    const btn = (label, page, opts = {}) =>
+      `<button type="button" class="jr-page${opts.on ? ' on' : ''}" data-page="${page}"` +
+      `${opts.disabled ? ' disabled' : ''}${opts.on ? ' aria-current="page"' : ''}` +
+      `${opts.label ? ` aria-label="${esc(opts.label)}"` : ''}>${label}</button>`;
+    const nums = pageWindow(info.page, info.pageCount)
+      .map(p => p === null
+        ? '<span class="jr-page-gap" aria-hidden="true">&hellip;</span>'
+        : btn(String(p), p, { on: p === info.page, label: `Page ${p}` }))
+      .join('');
+    return `<nav class="jr-pager" aria-label="Journal pages">` +
+      btn('&lsaquo;', info.page - 1, { disabled: info.page <= 1, label: 'Previous page' }) +
+      nums +
+      btn('&rsaquo;', info.page + 1, { disabled: info.page >= info.pageCount, label: 'Next page' }) +
+      `</nav>`;
+  }
+
   /* ── page wiring ──────────────────────────────────── */
   function init() {
     const list   = document.getElementById('jr-list');
@@ -243,8 +289,10 @@
     const inpQ     = document.getElementById('jf-q');
     const btnClear = document.getElementById('jf-clear');
     const count    = document.getElementById('jf-count');
+    const pager    = document.getElementById('jr-pager');
 
     let entries = [];
+    let page = 1;
     const openIds = new Set();
 
     const setStatus = html => { status.innerHTML = html || ''; status.hidden = !html; };
@@ -271,15 +319,45 @@
 
     function render() {
       const f = { date: selDate.value, id: selTitle.value, q: inpQ.value };
-      const shown = filterEntries(entries, f);
-      if (f.id) shown.forEach(e => openIds.add(e.id));
-      list.innerHTML = shown.map(e => renderCard(e, openIds.has(e.id))).join('');
+      const matched = filterEntries(entries, f);
+      if (f.id) matched.forEach(e => openIds.add(e.id));
+
+      const info = paginate(matched, page);
+      page = info.page;
+      list.innerHTML = info.items.map(e => renderCard(e, openIds.has(e.id))).join('');
+      if (pager) pager.innerHTML = renderPager(info);
+
       const total = entries.length;
-      count.textContent = `${shown.length} of ${total} entr${total === 1 ? 'y' : 'ies'}`;
-      if (!shown.length) {
+      const noun = `entr${total === 1 ? 'y' : 'ies'}`;
+      if (!info.total) {
+        count.textContent = `0 of ${total} ${noun}`;
+      } else if (info.pageCount > 1) {
+        count.textContent = `${info.start + 1}\u2013${info.end} of ${info.total} ${noun} \u00b7 page ${info.page}/${info.pageCount}`;
+      } else {
+        count.textContent = `${info.total} of ${total} ${noun}`;
+      }
+
+      if (!info.total) {
         setStatus(total ? 'No entries match the current filters.' : 'No journal entries yet.');
       } else if (status.dataset.sticky !== '1') {
         setStatus('');
+      }
+    }
+
+    /* Filters change what is being paged through, so restart at page 1. */
+    function refilter() {
+      page = 1;
+      render();
+    }
+
+    function goToPage(n) {
+      const before = page;
+      page = n;
+      render();
+      if (page !== before) {
+        const top = document.getElementById('p-journey');
+        const scroller = top ? top.querySelector('.canvas') : null;
+        if (scroller && typeof scroller.scrollTo === 'function') scroller.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
 
@@ -296,17 +374,19 @@
 
     function revealHash() {
       const id = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-      if (!id) return;
+      if (!id || !entries.some(e => e.id === id)) return;
       openIds.add(id);
-      let card = document.getElementById(id);
-      if (!card || !card.classList.contains('jr-card')) {
-        /* Entry is filtered out — clear filters so the link resolves. */
-        if (entries.some(e => e.id === id)) {
-          selDate.value = ''; fillTitles(); selTitle.value = ''; inpQ.value = '';
-          render();
-          card = document.getElementById(id);
-        }
+
+      /* Clear filters that hide the target, then page to where it landed. */
+      const visible = () => filterEntries(entries, { date: selDate.value, id: selTitle.value, q: inpQ.value });
+      if (!visible().some(e => e.id === id)) {
+        selDate.value = ''; fillTitles(); selTitle.value = ''; inpQ.value = '';
       }
+      const idx = visible().findIndex(e => e.id === id);
+      if (idx >= 0) page = Math.floor(idx / PAGE_SIZE) + 1;
+      render();
+
+      const card = document.getElementById(id);
       if (card && card.classList.contains('jr-card')) {
         setOpen(card, true);
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -317,7 +397,7 @@
       const tag = ev.target.closest('.jr-tag');
       if (tag) {
         inpQ.value = tag.dataset.tag || '';
-        render();
+        refilter();
         return;
       }
       const toggle = ev.target.closest('.jr-toggle');
@@ -327,12 +407,21 @@
       }
     });
 
-    selDate.addEventListener('change', () => { fillTitles(); render(); });
-    selTitle.addEventListener('change', render);
-    inpQ.addEventListener('input', render);
+    if (pager) {
+      pager.addEventListener('click', ev => {
+        const b = ev.target.closest('.jr-page');
+        if (!b || b.disabled) return;
+        const n = parseInt(b.dataset.page, 10);
+        if (Number.isFinite(n)) goToPage(n);
+      });
+    }
+
+    selDate.addEventListener('change', () => { fillTitles(); refilter(); });
+    selTitle.addEventListener('change', refilter);
+    inpQ.addEventListener('input', refilter);
     btnClear.addEventListener('click', () => {
       selDate.value = ''; fillTitles(); selTitle.value = ''; inpQ.value = '';
-      render();
+      refilter();
     });
     window.addEventListener('hashchange', revealHash);
 
@@ -345,7 +434,7 @@
         status.dataset.sticky = '1';
         setStatus(`<b>Some entries could not be loaded.</b><br>${errors.map(esc).join('<br>')}`);
       }
-      render();
+      refilter();
       revealHash();
     }).catch(err => {
       const hint = (location.protocol === 'file:')
@@ -359,7 +448,11 @@
 
   /* Expose the pure helpers for tests and for other scripts. */
   const root = (typeof window !== 'undefined') ? window : globalThis;
-  root.JOURNEY = { normalize, sortEntries, filterEntries, renderMarkdown, renderInline, renderCard, slugify, shortTitle, decodeEntities, plainText };
+  root.JOURNEY = {
+    normalize, sortEntries, filterEntries, paginate, pageWindow,
+    renderMarkdown, renderInline, renderCard, renderPager,
+    slugify, shortTitle, decodeEntities, plainText, PAGE_SIZE,
+  };
 
   if (typeof document !== 'undefined') {
     window.addEventListener('DOMContentLoaded', init);
