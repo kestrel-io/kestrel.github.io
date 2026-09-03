@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# -------------------------------------------------------
+#  pre-commit — keep the deployed tree optimized.
+#  When JS, journal JSON or pages are staged, run
+#  tools/build-assets.sh for the matching parts and stage
+#  the minified outputs and rewritten pages.
+#
+#  Enable once per clone:  git config core.hooksPath .githooks
+#  Skip for one commit:    git commit --no-verify
+# -------------------------------------------------------
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$staged" ] || exit 0
+
+flags=()
+if printf '%s\n' "$staged" | grep -E '^assets/(js|data)/[^/]+\.js$' | grep -qv '\.min\.js$'; then
+  flags+=(--js --html)
+fi
+if printf '%s\n' "$staged" | grep -E '^assets/journal/.+\.json$' | grep -qv '/journal\.min\.json$'; then
+  flags+=(--journal)
+fi
+if printf '%s\n' "$staged" | grep -qE '^[^/]+\.html$'; then
+  flags+=(--html)
+fi
+[ ${#flags[@]} -gt 0 ] || exit 0
+
+outputs() {
+  ls assets/js/*.min.js assets/data/*.min.js assets/journal/journal.min.json ./*.html 2>/dev/null | sed 's#^\./##'
+}
+snapshot() { for f in $(outputs); do printf '%s %s\n' "$f" "$(git hash-object "$f")"; done | sort; }
+
+dirty_before=$(git diff --name-only)
+before=$(snapshot)
+tools/build-assets.sh "${flags[@]}"
+after=$(snapshot)
+
+# Stage what the build changed or created, plus any output git does not track yet.
+changed=$(comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$after") | cut -d' ' -f1)
+untracked=$(git ls-files --others --exclude-standard -- $(outputs) 2>/dev/null || true)
+to_add=$(printf '%s\n%s\n' "$changed" "$untracked" | sed '/^$/d' | sort -u)
+if [ -n "$to_add" ]; then
+  for f in $to_add; do
+    if printf '%s\n' "$dirty_before" | grep -qx "$f"; then
+      echo "pre-commit: note — $f also had unstaged edits; the whole file is now staged" >&2
+    fi
+  done
+  git add -- $to_add
+  echo "pre-commit: staged $(printf '%s\n' "$to_add" | wc -l | tr -d ' ') generated/updated file(s)"
+fi

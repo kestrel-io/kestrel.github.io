@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
-<title>Kestrel // Dataset</title>
+<title>Kestrel // Datasets</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="stylesheet" href="assets/css/fonts.css">
 <script src="assets/vendor/d3/d3.min.js"></script>
@@ -24,6 +24,7 @@
   <span class="tagline-text">Active defense, coming soon.</span>
   <div class="nav-row nav-top">
     <a class="tab" href="index.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M1 7L7 1l6 6"/><path d="M3 5.5V13h3V9.5h2V13h3V5.5"/></svg>Home</a>
+    <a class="tab" href="journey.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="5.6"/><path d="M9.6 4.4 8.3 8.3 4.4 9.6 5.7 5.7Z"/></svg>Journey</a>
     <button class="tab tab-refs" id="nav-refs" type="button" aria-controls="nav-sub" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M7 4.2C6.2 3.3 4.9 2.8 2.5 2.8v8c2.4 0 3.7.5 4.5 1.4"/><path d="M7 4.2c.8-.9 2.1-1.4 4.5-1.4v8c-2.4 0-3.7.5-4.5 1.4"/><line x1="7" y1="4.2" x2="7" y2="12.2"/></svg>References</button>
   </div>
 </div>
@@ -35,7 +36,7 @@
     <a class="tab" href="campaigns.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M2 11 L7 2 L12 11 Z"/><circle cx="7" cy="9" r="1.2" fill="currentColor"/></svg>ATT&CK&reg; Campaigns</a>
     <a class="tab" href="ebpf.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.6"/><line x1="7" y1="1.4" x2="7" y2="5"/><line x1="7" y1="9" x2="7" y2="12.6"/><line x1="1.4" y1="7" x2="5" y2="7"/><line x1="9" y1="7" x2="12.6" y2="7"/></svg>eBPF Visualized</a>
     <a class="tab" href="ebpf-matrix.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="1"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="5" y1="1" x2="5" y2="13"/><rect x="7.2" y="7.2" width="3.2" height="3.2" fill="currentColor" stroke="none"/></svg>eBPF Matrix</a>
-    <a class="tab on" href="dataset.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><ellipse cx="7" cy="3.5" rx="5" ry="2"/><path d="M2 3.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/><path d="M2 6.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/></svg>Dataset</a>
+    <a class="tab on" href="dataset.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><ellipse cx="7" cy="3.5" rx="5" ry="2"/><path d="M2 3.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/><path d="M2 6.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/></svg>Datasets</a>
   </div>
 </div>
 
@@ -86,11 +87,11 @@
 
 <div id="tt"></div>
 <div id="toast">Copied to clipboard</div>
-<script src="assets/data/data.js"></script>
-<script src="assets/data/campaigns.js"></script>
-<script src="assets/data/ebpf.js"></script>
-<script src="assets/js/kestrel.js"></script>
-<script src="assets/js/dataset-ebpf.js"></script>
+<script src="assets/data/data.min.js"></script>
+<script src="assets/data/campaigns.min.js"></script>
+<script src="assets/data/ebpf.min.js"></script>
+<script src="assets/js/kestrel.min.js"></script>
+<script src="assets/js/dataset-ebpf.min.js"></script>
 <script>
 window.addEventListener('DOMContentLoaded', () => {
   buildNameMaps();
@@ -98,6 +99,6 @@ window.addEventListener('DOMContentLoaded', () => {
   renderEbpfDataset();
 });
 </script>
-<script src="assets/js/nav.js"></script>
+<script src="assets/js/nav.min.js"></script>
 </body>
 </html>

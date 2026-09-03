@@ -1,0 +1,16 @@
+{
+  "title": "The Journey begins",
+  "date": "2026-09-03",
+  "tldr": "What started out as a 'I want to better understand the relationships of the MITRE ATT&amp;CK&reg; &copy; framework' to, well what does 'practical application of defense' mean?",
+  "contents": [
+    "The 'knowing of something' vs. 'knowing something'. A delima combined with 'how does this information make sense'?",
+    "## Visual Learning",
+    "I found myself clicking around the Enterprise framework elements trying to make sense of the properties of each category. While it made sense, I also found myself asking quite a few questions; for starters, how can this make more sense to me? How do each of the tactics relates to techniques? How do those in turn relate to their analytic and data components? Where do the data components overlap? Do the data components ONLY leverage passive logging? What other Linux events and telemetry are available?",
+    "## Researching",
+    "Being a good researcher, is time consuming and arduous. I really need to thank the folks at MITRE for coming up with this information and providing it in several ways for people to consume. Thank you nameless heros!",
+    "Having this information provided in a JSON format allowed me to identify and filter using various topics of interest and ultimately currating a visualization that helps identify the relationships.",
+    "## Enjoy",
+    "The intial step has been and always will be understanding the topics involved. I hope the visualizations help others make sense of this complex set of topics as well."
+  ],
+  "tags": ["learning", "visualization", "start"]
+}
