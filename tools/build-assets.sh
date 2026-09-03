@@ -6,7 +6,7 @@
 #    tools/build-assets.sh            everything below
 #    tools/build-assets.sh --js       assets/js/*.js, assets/data/*.js  ->  *.min.js
 #    tools/build-assets.sh --journal  assets/journal/*.json             ->  assets/journal/journal.min.json
-#    tools/build-assets.sh --html     <script src="assets/{js,data}/X.js">  ->  X.min.js
+#    tools/build-assets.sh --html     <script src="assets/{js,data}/X.js">  ->  X.min.js?v=<hash>
 #
 #  .githooks/pre-commit runs this for whatever is staged and
 #  stages the results (enable once: git config core.hooksPath .githooks).
@@ -72,25 +72,37 @@ fi
 
 if [ "$do_html" = 1 ]; then
   echo "build-assets: pointing pages at minified scripts"
-  python3 - <<'PY'
-import glob, os, re
-pat = re.compile(r'(<script\s+src=")(assets/(?:js|data)/[^"/]+?)\.js(")')
+  python3 - <<'HTMLPY'
+import glob, hashlib, os, re
+
+# src="assets/js/x.js" | "assets/js/x.min.js" | "assets/js/x.min.js?v=abc12345"
+pat = re.compile(r'(<script\s+src=")(assets/(?:js|data)/[^"?]+?)(?:\.min)?\.js(?:\?v=[0-9a-f]+)?(")')
+
+def stamp(path):
+    """Short content hash. Changing a script changes its URL, so browsers
+    fetch the new build instead of serving a cached copy."""
+    with open(path, 'rb') as fh:
+        return hashlib.sha256(fh.read()).hexdigest()[:8]
+
 changed = 0
 for page in sorted(glob.glob('*.html')):
     with open(page, encoding='utf-8') as fh:
         html = fh.read()
+
     def swap(m):
-        base = m.group(2)
-        if base.endswith('.min') or not os.path.exists(base + '.min.js'):
+        minified = m.group(2) + '.min.js'
+        if not os.path.exists(minified):
+            # No minified build (hand-written or vendored) - leave it alone.
             return m.group(0)
-        return f'{m.group(1)}{base}.min.js{m.group(3)}'
+        return m.group(1) + minified + '?v=' + stamp(minified) + m.group(3)
+
     new = pat.sub(swap, html)
     if new != html:
         with open(page, 'w', encoding='utf-8') as fh:
             fh.write(new)
         changed += 1
-        print(f'  rewrote {page}')
+        print('  rewrote ' + page)
 if not changed:
-    print('  (all pages already reference minified scripts)')
-PY
+    print('  (all pages already reference current minified scripts)')
+HTMLPY
 fi

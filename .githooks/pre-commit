@@ -47,5 +47,10 @@ if [ -n "$to_add" ]; then
     fi
   done
   git add -- $to_add
+  # Generated assets and pages are data, never executables. Some working
+  # copies in this repo carry a stray +x bit; keep it out of the commit.
+  for f in $to_add; do
+    git update-index --chmod=-x "$f" 2>/dev/null || true
+  done
   echo "pre-commit: staged $(printf '%s\n' "$to_add" | wc -l | tr -d ' ') generated/updated file(s)"
 fi
