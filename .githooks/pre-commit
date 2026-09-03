@@ -47,10 +47,17 @@ if [ -n "$to_add" ]; then
     fi
   done
   git add -- $to_add
-  # Generated assets and pages are data, never executables. Some working
-  # copies in this repo carry a stray +x bit; keep it out of the commit.
-  for f in $to_add; do
-    git update-index --chmod=-x "$f" 2>/dev/null || true
-  done
   echo "pre-commit: staged $(printf '%s\n' "$to_add" | wc -l | tr -d ' ') generated/updated file(s)"
 fi
+
+# Many working copies in this tree carry a stray +x bit that would land in the
+# commit as a mode change. Clear it for every staged file that is not actually
+# a script; a shebang on the first line is what marks one as executable.
+normalized=0
+for f in $(git diff --cached --summary | awk '/mode change 100644 => 100755/{print $NF}'); do
+  [ -f "$f" ] || continue
+  [ "$(head -c 2 "$f" 2>/dev/null)" = '#!' ] && continue
+  git update-index --chmod=-x "$f" 2>/dev/null && normalized=$((normalized + 1)) || true
+done
+[ "$normalized" -gt 0 ] && echo "pre-commit: cleared a stray +x bit on $normalized staged file(s)"
+exit 0
