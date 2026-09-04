@@ -148,7 +148,14 @@ function cascade() {
 }
 
 function clearFilters() {
-  ['scope','domain','prog','map','helper','kfunc','sys','q'].forEach(k => { if (EL[k]) EL[k].value = ''; });
+  ['scope','domain','prog','map','helper','kfunc','sys','q'].forEach(k => {
+    const el = EL[k];
+    if (!el) return;
+    // Back to whatever the markup marks selected (the scope default), not blank.
+    // Cascaded selects are rebuilt with plain options, so they fall back to ''.
+    const def = el.options && [...el.options].find(o => o.defaultSelected);
+    el.value = def ? def.value : '';
+  });
   cascade();
 }
 
