@@ -46,54 +46,27 @@
     <div class="home-phrase">Active Defense</div>
     <div class="home-phrase" style="font-size:30px;"></div>
     <p class="home-sub">
-      Kestrel correlates eBPF kernel telemetry with threat intelligence to detect and respond
-      to adversarial behavior in real time. Define detection campaigns using YAML rules,
-      chain weighted consensus events, and trigger precise countermeasures.
+      Kestrel correlates kernel telemetry in order identify interesting signals respond in real time.
     </p>
-    <p>
-      Kestrel comes pre-configured to leverage the MITRE ATT&amp;CK<sup>&reg;</sup> to assist with detction of ineresting signals.
-    </p>
-    <div class="home-yaml">
-      <div class="home-yaml-label">Detection Structure</div>
-        <pre class="home-yaml-code">
-detections:
-  ssh_authorized_keys_manipulation:
-    threshold: 0.70
-    window: "90s"
-    context_key: uid
-    cooldown: "300s"
-    events:
-      TA0003_T1098_004_DC0039:
-        program: BPF_PROG_TYPE_LSM
-        weight:  0.70
-        filters:
-          - ctx_present == 1
-          - paths contains [ /root/.ssh/, /home/ ]
-          - exe not contains [ sshd, ssh-copy-id, ansible, puppet ]
-      TA0003_T1098_004_DC0061:
-        program: BPF_PROG_TYPE_KPROBE
-        weight:  0.50
-        filters:
-          - paths == [ /home/ ]
-          - exe not contains [ sshd, ssh-copy-id, ansible, puppet ]
-      TA0003_T1098_004_DC0032:
-        program: BPF_PROG_TYPE_TRACEPOINT
-        weight:  0.35
-        filters:
-          - comm contains [ sshd, bash, sh, ansible ]
-          - exe not contains [ sshd, ssh-keygen, ssh-copy-id ]
-    includes:
-      - interactive_shellsunprivileged_users
-      - unprivileged_users
-    excludes:
-      - ignored_programs
-    actions:
-      - log
-      - notify
-      - isolation</pre>
-      <p class="home-sub" style="font-size:10px;margin-top:10px;color:rgba(255,255,255,.55);">Coverage pages now use the enriched event-key schema <code>TA####_T####_###_DET####_DC####[_PROGRAM]</code>. Runtime rule examples may still use shorter rule IDs.</p><br>
+  </div>
+
+  <div class="home-plot">
+    <div class="cl-stage">
+      <svg id="cl-plot" class="cl-plot" viewBox="0 72 1180 652" preserveAspectRatio="xMidYMid meet"
+           role="img"
+           aria-label="A spectrum analyzer display: thirty-three channel traces stacked on a diamond-shaped floor whose grid dissolves at its edges. Every channel shows a live noise floor. Transmissions rise out of that floor at random bins and random intervals on any channel, and the known ones among them are each labelled with a full event key. The display is generated for demonstration, not measured.">
+        <g id="cl-floor"></g>
+        <g id="cl-ridges"></g>
+        <g id="cl-peaks"></g>
+      </svg>
+      <div class="cl-legend">
+        <span><i style="background:var(--text)"></i>average noise level</span>
+        <span><i style="background:var(--accent)"></i>classified events</span>
+        <span class="note">demonstration, not live data</span>
+      </div>
     </div>
   </div>
+
   <div class="home-stat-row">
     <span class="home-pill"><b>13</b> Tactics</span>
     <span class="home-pill"><b>179</b> Techniques</span>
@@ -144,6 +117,7 @@ detections:
   </div>
 </div>
 
+<script src="assets/js/carrier.min.js?v=ea767098"></script>
 <script src="assets/js/nav.min.js?v=1ef4121c"></script>
 </body>
 </html>
