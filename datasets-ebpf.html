@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
-<title>Kestrel // ATT&CK® Visualized</title>
+<title>Kestrel // eBPF Dataset</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="stylesheet" href="assets/css/fonts.css">
 <script src="assets/vendor/d3/d3.min.js"></script>
@@ -25,64 +25,59 @@
   <div class="nav-row nav-top">
     <a class="tab" href="index.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M1 7L7 1l6 6"/><path d="M3 5.5V13h3V9.5h2V13h3V5.5"/></svg>Home</a>
     <a class="tab" href="journey.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="5.6"/><path d="M9.6 4.4 8.3 8.3 4.4 9.6 5.7 5.7Z"/></svg>Journey</a>
-    <button class="tab tab-refs" id="nav-refs" type="button" aria-controls="nav-sub" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M7 4.2C6.2 3.3 4.9 2.8 2.5 2.8v8c2.4 0 3.7.5 4.5 1.4"/><path d="M7 4.2c.8-.9 2.1-1.4 4.5-1.4v8c-2.4 0-3.7.5-4.5 1.4"/><line x1="7" y1="4.2" x2="7" y2="12.2"/></svg>References</button>
-    <button class="tab tab-refs" id="nav-ds" type="button" aria-controls="nav-ds-row" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><ellipse cx="7" cy="3.5" rx="5" ry="2"/><path d="M2 3.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/><path d="M2 6.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/></svg>Datasets</button>
+    <button class="tab tab-refs" id="nav-refs" type="button" aria-controls="nav-sub" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M7 4.2C6.2 3.3 4.9 2.8 2.5 2.8v8c2.4 0 3.7.5 4.5 1.4"/><path d="M7 4.2c.8-.9 2.1-1.4 4.5-1.4v8c-2.4 0-3.7.5-4.5 1.4"/><line x1="7" y1="4.2" x2="7" y2="12.2"/></svg>References</button>
+    <button class="tab tab-refs" id="nav-ds" type="button" aria-controls="nav-ds-row" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><ellipse cx="7" cy="3.5" rx="5" ry="2"/><path d="M2 3.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/><path d="M2 6.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/></svg>Datasets</button>
   </div>
 </div>
 <div id="nav">
-  <div class="nav-row nav-sub on" id="nav-sub">
-    <a class="tab on" href="visualized.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="vertical-align:middle;margin-right:5px"><circle cx="2" cy="2" r="1.5"/><circle cx="12" cy="2" r="1.5"/><circle cx="7" cy="7" r="1.5"/><circle cx="2" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><line x1="2" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="2" x2="12" y2="2" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="1"/></svg>ATT&CK&reg; Visualized</a>
+  <div class="nav-row nav-sub" id="nav-sub">
+    <a class="tab" href="visualized.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="vertical-align:middle;margin-right:5px"><circle cx="2" cy="2" r="1.5"/><circle cx="12" cy="2" r="1.5"/><circle cx="7" cy="7" r="1.5"/><circle cx="2" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><line x1="2" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="2" x2="12" y2="2" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="1"/></svg>ATT&CK&reg; Visualized</a>
     <a class="tab" href="matrix.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="1"/><line x1="1" y1="4.5" x2="13" y2="4.5"/><line x1="1" y1="8" x2="13" y2="8"/><line x1="1" y1="11.5" x2="13" y2="11.5"/><line x1="5" y1="1" x2="5" y2="13"/><line x1="9" y1="1" x2="9" y2="13"/></svg>ATT&CK&reg; Matrix</a>
     <a class="tab" href="campaigns-visualized.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="1.8"/><circle cx="2" cy="2" r="1.3"/><circle cx="12" cy="2" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><line x1="7" y1="7" x2="2" y2="2" stroke="currentColor" stroke-width="1"/><line x1="7" y1="7" x2="12" y2="2" stroke="currentColor" stroke-width="1"/><line x1="7" y1="7" x2="2" y2="12" stroke="currentColor" stroke-width="1"/><line x1="7" y1="7" x2="12" y2="12" stroke="currentColor" stroke-width="1"/></svg>ATT&CK&reg; Campaigns Visualized</a>
     <a class="tab" href="campaigns.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M2 11 L7 2 L12 11 Z"/><circle cx="7" cy="9" r="1.2" fill="currentColor"/></svg>ATT&CK&reg; Campaigns</a>
     <a class="tab" href="ebpf.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.6"/><line x1="7" y1="1.4" x2="7" y2="5"/><line x1="7" y1="9" x2="7" y2="12.6"/><line x1="1.4" y1="7" x2="5" y2="7"/><line x1="9" y1="7" x2="12.6" y2="7"/></svg>eBPF Visualized</a>
     <a class="tab" href="ebpf-matrix.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="1"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="5" y1="1" x2="5" y2="13"/><rect x="7.2" y="7.2" width="3.2" height="3.2" fill="currentColor" stroke="none"/></svg>eBPF Matrix</a>
   </div>
-  <div class="nav-row nav-sub" id="nav-ds-row">
+  <div class="nav-row nav-sub on" id="nav-ds-row">
     <a class="tab" href="dataset.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="5" height="5"/><rect x="8" y="1" width="5" height="5"/><rect x="1" y="8" width="5" height="5"/><rect x="8" y="8" width="5" height="5"/></svg>Overview</a>
     <a class="tab" href="datasets-attack.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M2 11 L7 2 L12 11 Z"/><circle cx="7" cy="9" r="1.2" fill="currentColor"/></svg>ATT&CK&reg; Framework</a>
     <a class="tab" href="datasets-linux.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1.5" y="1.5" width="11" height="11" rx="1"/><path d="M4 5.5 6 7.5 4 9.5"/><line x1="7.5" y1="9.5" x2="10.5" y2="9.5"/></svg>Linux Reference</a>
     <a class="tab" href="datasets-lotl.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="4.5" cy="9.5" r="2.6"/><path d="M6.4 7.6 12 2"/><line x1="9.6" y1="4.4" x2="11.2" y2="6"/></svg>Living off the Land</a>
-    <a class="tab" href="datasets-ebpf.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.6"/><line x1="7" y1="1.4" x2="7" y2="5"/><line x1="7" y1="9" x2="7" y2="12.6"/><line x1="1.4" y1="7" x2="5" y2="7"/><line x1="9" y1="7" x2="12.6" y2="7"/></svg>eBPF Programs</a>
+    <a class="tab on" href="datasets-ebpf.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.6"/><line x1="7" y1="1.4" x2="7" y2="5"/><line x1="7" y1="9" x2="7" y2="12.6"/><line x1="1.4" y1="7" x2="5" y2="7"/><line x1="9" y1="7" x2="12.6" y2="7"/></svg>eBPF Programs</a>
   </div>
 </div>
 
 <div id="main">
   <div id="content">
-    <div id="p-force" class="panel on">
-      <div class="toolbar">
-        <span class="toolbar-label">VISUALIZATION</span>
-        <button class="tbtn" id="btn-reset">&#8634; RESET</button>
-        <button class="tbtn lit" id="btn-labels">&#8943; LABELS</button>
-        <div class="toolbar-sep"></div>
-        <label style="display:flex;align-items:center;gap:5px;font-size:9.5px">
-          Label depth &le;
-          <select class="tsel" id="sel-depth">
-            <option value="1">Tactics</option>
-            <option value="2">+ Techniques</option>
-            <option value="3">+ Sub-Techs</option>
-            <option value="4">+ Detections</option>
-            <option value="5" selected>All nodes</option>
-          </select>
-        </label>
-        <div class="toolbar-sep"></div>
-        <span style="font-size:9.5px;color:var(--text-dim);letter-spacing:.8px">FILTER:</span>
-        <select class="tsel" id="vf-tac"><option value="">All Tactics</option></select>
-        <select class="tsel" id="vf-tech"><option value="">All Techniques</option></select>
-        <select class="tsel" id="vf-dc"><option value="">All Data Components</option></select>
-        <input type="text" class="tsel" id="vf-q" placeholder="Search nodes&hellip;">
-        <span class="toolbar-hint">Scroll=zoom &middot; Drag=pan/node &middot; Click=details &middot; Shift+Click=MITRE &#8599; &middot; Dbl-click=reset view</span>
-      </div>
-      <div class="canvas" id="cv-force">
-        <div class="mitre-overlay">MITRE ATT&amp;CK&reg; 2026 The MITRE Corporation.<br>ATT&amp;CK is a trademark of The MITRE Corporation.</div>
-        <div class="legend" id="lg-force"></div>
+    <div id="p-dataset" class="panel on">
+      <div class="canvas" style="overflow-y:auto;padding:28px;">
+        <div style="max-width:760px;margin:0 auto;">
+          <h2 style="font-family:var(--title);font-size:20px;font-weight:700;color:var(--accent);margin-bottom:4px;letter-spacing:.5px;">eBPF Programs</h2>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);margin-bottom:24px;">What the kernel will let you watch &middot; program types, attach points and the objects each one may call</p>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">A detection is only real if something can observe it. This dataset is the honest bound on that: the eBPF program types the kernel exposes, the helpers, map types, kfuncs and syscall commands each one is allowed to reach, the kernel version each appeared in, and the verifier scope that applies. It is what stops a coverage claim being written for a data component nothing can produce.</p>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">The two halves answer different questions. The attach points say <em>where a probe would go</em> for a given data component, with the filter and kernel floor it needs. The capability matrix says <em>what that probe could then do</em> once loaded. A program type that cannot call the helper a technique requires is a gap, and it is recorded as one rather than quietly rounded up.</p>
+          <h2 style="font-family:var(--title);font-size:15px;font-weight:700;color:var(--accent);margin:36px 0 14px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:6px;">eBPF Detection Programs</h2>
+          <h3 style="font-family:var(--title);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Attach Points by Data Component</h3>
+          <div id="ds-ebpf-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:32px;"></div>
+          <h2 style="font-family:var(--title);font-size:15px;font-weight:700;color:var(--accent);margin:36px 0 14px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);padding-bottom:6px;">eBPF Capability Matrix</h2>
+          <div id="ds-ebpf-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:32px;"></div>
+          <h3 style="font-family:var(--title);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Program Types by Domain</h3>
+          <div id="ds-ebpf-domains" style="margin-bottom:32px;"></div>
+          <h3 style="font-family:var(--title);font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;">Object Catalog</h3>
+          <div id="ds-ebpf-catalog" style="display:flex;flex-direction:column;gap:6px;margin-bottom:32px;"></div>
+          <p style="font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:12px;">
+            MITRE ATT&amp;CK&reg; &copy; 2026 The MITRE Corporation. ATT&amp;CK is a trademark of The MITRE Corporation.<br>
+            eBPF documentation &copy; the eBPF-Docs Authors (BSD-2-Clause). Kernel definitions from the Linux kernel (GPL-2.0/BSD-2-Clause).
+          </p>
+
+        </div>
       </div>
     </div>
   </div>
   <div id="sp">
     <button id="sp-close" onclick="closePanel()">&#x2715; CLOSE</button>
     <div id="sp-body">
-      <div class="sp-empty">Click any node in the graph<br>to view details, event keys &amp; eBPF mappings</div>
+      <div class="sp-empty">No node selected</div>
     </div>
   </div>
 </div>
@@ -90,7 +85,17 @@
 <div id="tt"></div>
 <div id="toast">Copied to clipboard</div>
 <script src="assets/data/data.min.js?v=3f055cdf"></script>
+<script src="assets/data/campaigns.min.js?v=11e971db"></script>
+<script src="assets/data/ebpf.min.js?v=6a1cea65"></script>
 <script src="assets/js/kestrel.min.js?v=e36ef6ec"></script>
+<script src="assets/js/dataset-ebpf.min.js?v=4c9cba24"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  buildNameMaps();
+  initDatasetPanel();
+  renderEbpfDataset();
+});
+</script>
 <script src="assets/js/nav.min.js?v=5cb7abb1"></script>
 </body>
 </html>

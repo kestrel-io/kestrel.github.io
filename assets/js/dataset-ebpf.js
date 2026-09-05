@@ -1,5 +1,5 @@
 /* -------------------------------------------------------
-   DATASET — eBPF capability matrix sections + data sources
+   DATASET — eBPF capability matrix sections.
    Reads the EBPF global from assets/data/ebpf.js; the ATT&CK
    and campaign sections are rendered by kestrel.js.
 ------------------------------------------------------- */
@@ -96,68 +96,11 @@
     }).join('');
   }
 
-  /* The three corpora this site ships, and where each one comes from. */
-  function renderSources(el) {
-    const sources = [];
-
-    if (typeof DATA !== 'undefined') {
-      const m = DATA.meta || {}, s = DATA.stats || {};
-      sources.push({
-        file: 'assets/data/data.js',
-        title: m.title || 'MITRE ATT&CK Linux coverage corpus',
-        body: `${s.total_rows || (DATA.rows||[]).length} coverage rows · ${s.total_tactics || 0} tactics · ` +
-              `${s.total_techniques_parent || 0} techniques · ${s.total_data_components_referenced || 0} data components`,
-        note: m.generated_at ? `Generated ${String(m.generated_at).slice(0,10)}` : '',
-        links: (m.sources || []).slice(0, 3),
-      });
-    }
-
-    if (typeof CAMPAIGNS !== 'undefined') {
-      const camps = CAMPAIGNS.campaigns || [];
-      const techs = camps.reduce((n,c) => n + (c.linux_techniques||[]).length, 0);
-      sources.push({
-        file: 'assets/data/campaigns.js',
-        title: 'Linux-targeting campaign corpus',
-        body: `${camps.length} campaigns · ${techs} technique mappings · ` +
-              `${Object.keys(CAMPAIGNS.data_component_registry_linux_updated || {}).length} data components in the registry`,
-        note: '', links: [],
-      });
-    }
-
-    if (typeof EBPF !== 'undefined') {
-      const m = EBPF.meta || {}, s = EBPF.stats || {};
-      sources.push({
-        file: 'assets/data/ebpf.js',
-        title: m.title || 'eBPF program capability matrix',
-        body: `${s.total_program_types} program types · ${s.total_relationships} relationships · ` +
-              `${s.total_helpers + s.total_map_types + s.total_kfuncs + s.total_syscall_commands} catalogued objects`,
-        note: `Generated from ${esc(m.source_bundle || 'the STIX bundle')} by assets/data/source/ebpf_matrix_to_js.py` +
-              (m.generated_at ? ` · ${String(m.generated_at).slice(0,10)}` : ''),
-        links: (m.sources || []).slice(0, 3),
-        attribution: m.attribution || '',
-      });
-    }
-
-    el.innerHTML = sources.map(s => `
-      <div style="background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px 16px;">
-        <div style="font-family:var(--mono);font-size:11px;color:var(--accent);margin-bottom:4px">${esc(s.file)}</div>
-        <div style="font-family:var(--body);font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px">${esc(s.title)}</div>
-        <div style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.6">${esc(s.body)}</div>
-        ${s.note ? `<div style="font-family:var(--body);font-size:9px;color:var(--text-dim);margin-top:5px">${s.note}</div>` : ''}
-        ${s.attribution ? `<div style="font-family:var(--body);font-size:9px;color:var(--text-dim);margin-top:5px;line-height:1.6">${esc(s.attribution)}</div>` : ''}
-        ${(s.links||[]).length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${
-          s.links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="font-family:var(--mono);font-size:9px;color:var(--accent);text-decoration:none">↗ ${esc(String(u).replace(/^https?:\/\//,'').slice(0,46))}</a>`).join('')
-        }</div>` : ''}
-      </div>`).join('');
-  }
-
   window.renderEbpfDataset = function () {
-    const sourcesEl = document.getElementById('ds-sources');
     if (typeof EBPF === 'undefined') {
       const grid = document.getElementById('ds-ebpf-grid');
       if (grid) grid.innerHTML =
         `<div style="font-family:var(--body);font-size:11px;color:var(--text-dim)">Could not load assets/data/ebpf.js</div>`;
-      if (sourcesEl) renderSources(sourcesEl);
       return;
     }
     const grid    = document.getElementById('ds-ebpf-grid');
@@ -166,6 +109,5 @@
     if (grid)      renderGrid(grid, EBPF.stats);
     if (domains)   renderDomains(domains);
     if (catalog)   renderCatalog(catalog);
-    if (sourcesEl) renderSources(sourcesEl);
   };
 })();

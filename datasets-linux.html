@@ -4,10 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
-<title>Kestrel // ATT&CK® Visualized</title>
+<title>Kestrel // Linux Reference Dataset</title>
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="stylesheet" href="assets/css/fonts.css">
-<script src="assets/vendor/d3/d3.min.js"></script>
 <link rel="stylesheet" href="assets/css/kestrel.css">
 </head>
 <body>
@@ -25,23 +24,23 @@
   <div class="nav-row nav-top">
     <a class="tab" href="index.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M1 7L7 1l6 6"/><path d="M3 5.5V13h3V9.5h2V13h3V5.5"/></svg>Home</a>
     <a class="tab" href="journey.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="5.6"/><path d="M9.6 4.4 8.3 8.3 4.4 9.6 5.7 5.7Z"/></svg>Journey</a>
-    <button class="tab tab-refs" id="nav-refs" type="button" aria-controls="nav-sub" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M7 4.2C6.2 3.3 4.9 2.8 2.5 2.8v8c2.4 0 3.7.5 4.5 1.4"/><path d="M7 4.2c.8-.9 2.1-1.4 4.5-1.4v8c-2.4 0-3.7.5-4.5 1.4"/><line x1="7" y1="4.2" x2="7" y2="12.2"/></svg>References</button>
-    <button class="tab tab-refs" id="nav-ds" type="button" aria-controls="nav-ds-row" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><ellipse cx="7" cy="3.5" rx="5" ry="2"/><path d="M2 3.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/><path d="M2 6.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/></svg>Datasets</button>
+    <button class="tab tab-refs" id="nav-refs" type="button" aria-controls="nav-sub" aria-expanded="false"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M7 4.2C6.2 3.3 4.9 2.8 2.5 2.8v8c2.4 0 3.7.5 4.5 1.4"/><path d="M7 4.2c.8-.9 2.1-1.4 4.5-1.4v8c-2.4 0-3.7.5-4.5 1.4"/><line x1="7" y1="4.2" x2="7" y2="12.2"/></svg>References</button>
+    <button class="tab tab-refs" id="nav-ds" type="button" aria-controls="nav-ds-row" aria-expanded="true"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><ellipse cx="7" cy="3.5" rx="5" ry="2"/><path d="M2 3.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/><path d="M2 6.5v3c0 1.1 2.24 2 5 2s5-.9 5-2v-3"/></svg>Datasets</button>
   </div>
 </div>
 <div id="nav">
-  <div class="nav-row nav-sub on" id="nav-sub">
-    <a class="tab on" href="visualized.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="vertical-align:middle;margin-right:5px"><circle cx="2" cy="2" r="1.5"/><circle cx="12" cy="2" r="1.5"/><circle cx="7" cy="7" r="1.5"/><circle cx="2" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><line x1="2" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="2" x2="12" y2="2" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="1"/></svg>ATT&CK&reg; Visualized</a>
+  <div class="nav-row nav-sub" id="nav-sub">
+    <a class="tab" href="visualized.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="vertical-align:middle;margin-right:5px"><circle cx="2" cy="2" r="1.5"/><circle cx="12" cy="2" r="1.5"/><circle cx="7" cy="7" r="1.5"/><circle cx="2" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><line x1="2" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="2" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="12" y1="12" x2="7" y2="7" stroke="currentColor" stroke-width="1"/><line x1="2" y1="2" x2="12" y2="2" stroke="currentColor" stroke-width="1"/><line x1="2" y1="12" x2="12" y2="12" stroke="currentColor" stroke-width="1"/></svg>ATT&CK&reg; Visualized</a>
     <a class="tab" href="matrix.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="1"/><line x1="1" y1="4.5" x2="13" y2="4.5"/><line x1="1" y1="8" x2="13" y2="8"/><line x1="1" y1="11.5" x2="13" y2="11.5"/><line x1="5" y1="1" x2="5" y2="13"/><line x1="9" y1="1" x2="9" y2="13"/></svg>ATT&CK&reg; Matrix</a>
     <a class="tab" href="campaigns-visualized.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="1.8"/><circle cx="2" cy="2" r="1.3"/><circle cx="12" cy="2" r="1.3"/><circle cx="2" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><line x1="7" y1="7" x2="2" y2="2" stroke="currentColor" stroke-width="1"/><line x1="7" y1="7" x2="12" y2="2" stroke="currentColor" stroke-width="1"/><line x1="7" y1="7" x2="2" y2="12" stroke="currentColor" stroke-width="1"/><line x1="7" y1="7" x2="12" y2="12" stroke="currentColor" stroke-width="1"/></svg>ATT&CK&reg; Campaigns Visualized</a>
     <a class="tab" href="campaigns.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M2 11 L7 2 L12 11 Z"/><circle cx="7" cy="9" r="1.2" fill="currentColor"/></svg>ATT&CK&reg; Campaigns</a>
     <a class="tab" href="ebpf.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.6"/><line x1="7" y1="1.4" x2="7" y2="5"/><line x1="7" y1="9" x2="7" y2="12.6"/><line x1="1.4" y1="7" x2="5" y2="7"/><line x1="9" y1="7" x2="12.6" y2="7"/></svg>eBPF Visualized</a>
     <a class="tab" href="ebpf-matrix.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="1"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="5" y1="1" x2="5" y2="13"/><rect x="7.2" y="7.2" width="3.2" height="3.2" fill="currentColor" stroke="none"/></svg>eBPF Matrix</a>
   </div>
-  <div class="nav-row nav-sub" id="nav-ds-row">
+  <div class="nav-row nav-sub on" id="nav-ds-row">
     <a class="tab" href="dataset.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1" y="1" width="5" height="5"/><rect x="8" y="1" width="5" height="5"/><rect x="1" y="8" width="5" height="5"/><rect x="8" y="8" width="5" height="5"/></svg>Overview</a>
     <a class="tab" href="datasets-attack.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><path d="M2 11 L7 2 L12 11 Z"/><circle cx="7" cy="9" r="1.2" fill="currentColor"/></svg>ATT&CK&reg; Framework</a>
-    <a class="tab" href="datasets-linux.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1.5" y="1.5" width="11" height="11" rx="1"/><path d="M4 5.5 6 7.5 4 9.5"/><line x1="7.5" y1="9.5" x2="10.5" y2="9.5"/></svg>Linux Reference</a>
+    <a class="tab on" href="datasets-linux.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><rect x="1.5" y="1.5" width="11" height="11" rx="1"/><path d="M4 5.5 6 7.5 4 9.5"/><line x1="7.5" y1="9.5" x2="10.5" y2="9.5"/></svg>Linux Reference</a>
     <a class="tab" href="datasets-lotl.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="4.5" cy="9.5" r="2.6"/><path d="M6.4 7.6 12 2"/><line x1="9.6" y1="4.4" x2="11.2" y2="6"/></svg>Living off the Land</a>
     <a class="tab" href="datasets-ebpf.html"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" style="vertical-align:middle;margin-right:5px"><circle cx="7" cy="7" r="2"/><circle cx="7" cy="7" r="5.6"/><line x1="7" y1="1.4" x2="7" y2="5"/><line x1="7" y1="9" x2="7" y2="12.6"/><line x1="1.4" y1="7" x2="5" y2="7"/><line x1="9" y1="7" x2="12.6" y2="7"/></svg>eBPF Programs</a>
   </div>
@@ -49,48 +48,136 @@
 
 <div id="main">
   <div id="content">
-    <div id="p-force" class="panel on">
-      <div class="toolbar">
-        <span class="toolbar-label">VISUALIZATION</span>
-        <button class="tbtn" id="btn-reset">&#8634; RESET</button>
-        <button class="tbtn lit" id="btn-labels">&#8943; LABELS</button>
-        <div class="toolbar-sep"></div>
-        <label style="display:flex;align-items:center;gap:5px;font-size:9.5px">
-          Label depth &le;
-          <select class="tsel" id="sel-depth">
-            <option value="1">Tactics</option>
-            <option value="2">+ Techniques</option>
-            <option value="3">+ Sub-Techs</option>
-            <option value="4">+ Detections</option>
-            <option value="5" selected>All nodes</option>
-          </select>
-        </label>
-        <div class="toolbar-sep"></div>
-        <span style="font-size:9.5px;color:var(--text-dim);letter-spacing:.8px">FILTER:</span>
-        <select class="tsel" id="vf-tac"><option value="">All Tactics</option></select>
-        <select class="tsel" id="vf-tech"><option value="">All Techniques</option></select>
-        <select class="tsel" id="vf-dc"><option value="">All Data Components</option></select>
-        <input type="text" class="tsel" id="vf-q" placeholder="Search nodes&hellip;">
-        <span class="toolbar-hint">Scroll=zoom &middot; Drag=pan/node &middot; Click=details &middot; Shift+Click=MITRE &#8599; &middot; Dbl-click=reset view</span>
-      </div>
-      <div class="canvas" id="cv-force">
-        <div class="mitre-overlay">MITRE ATT&amp;CK&reg; 2026 The MITRE Corporation.<br>ATT&amp;CK is a trademark of The MITRE Corporation.</div>
-        <div class="legend" id="lg-force"></div>
+    <div id="p-dataset" class="panel on">
+      <div class="canvas" style="overflow-y:auto;padding:28px;">
+        <div style="max-width:760px;margin:0 auto;">
+          <h2 style="font-family:var(--title);font-size:20px;font-weight:700;color:var(--accent);margin-bottom:4px;letter-spacing:.5px;">Linux Reference</h2>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);margin-bottom:24px;">The system surface a detection is written against &middot; documented, observed and inferred, kept apart</p>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">A technique names a behaviour. A sensor produces a call, a path or a symbol. Something has to hold the map between them, and that is this corpus: a cross-referenced index of the Linux system surface, built to be derived from rather than trained on. It carries no labels and no folds, nothing in it is written by hand, and every record names the method that produced it.</p>
+          <h3 style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);margin:0 0 8px;letter-spacing:.4px;">models/datasets/linux-reference</h3>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">
+            The reference index &mdash; and explicitly not a training set: no labels and no folds. It is a
+            cross-referenced map of the Linux system surface, from syscalls and error codes through
+            <span style="font-family:var(--mono);color:var(--text)">/proc</span>, library symbols, programs and
+            platform identities, used to derive and validate features rather than fed to a model directly.
+            Nothing in it is edited by hand; it is rebuilt from its sources. It is stratified into three layers
+            with different truth conditions.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid #a8a878">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:#a8a878;background:#a8a87822;border:1px solid #a8a87866">COURSE A</span>
+              <span style="flex:1">
+                <span style="display:block;font-family:var(--body);font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px">The spine &middot; documented</span>
+                <span style="display:block;font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65">Upstream and distribution-neutral: the man-pages release joined to the kernel&rsquo;s own architecture ABI tables. Numbers come from the kernel, not from prose, because man pages carry no per-architecture numbering and guessing it is what produced the previous generation&rsquo;s errors.</span>
+              </span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid #7a9878">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:#7a9878;background:#7a987822;border:1px solid #7a987866">COURSE B</span>
+              <span style="flex:1">
+                <span style="display:block;font-family:var(--body);font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px">Observed &middot; runtime</span>
+                <span style="display:block;font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65">What a real binary on a real system actually did, traced inside a disposable VM harness and keyed by platform. Coverage is bounded to program start-up and destructive or interactive programs are refused by name, so an observed call is proof and an absent one is proof of nothing &mdash; a distinction the records carry rather than imply.</span>
+              </span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);border-left:3px solid #c09060">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:#c09060;background:#c0906022;border:1px solid #c0906066">COURSE C</span>
+              <span style="flex:1">
+                <span style="display:block;font-family:var(--body);font-size:11px;font-weight:600;color:var(--text);margin-bottom:3px">Inferred &middot; static</span>
+                <span style="display:block;font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65">What a binary declares in its ELF, read without executing it and also keyed by platform. It reaches exactly the programs course B refuses to run, and it is compared against what was loaded rather than merged with it.</span>
+              </span>
+            </div>
+          </div>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">
+            No layer overwrites another and every record names the method that produced it. A fact about one
+            userland on one architecture is not a fact about Linux, and what a binary asks for is not what it was
+            seen to do &mdash; so the same program on two distributions stays two records instead of collapsing
+            into one that is true of neither.
+          </p>
+
+          <h3 style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);margin:0 0 8px;letter-spacing:.4px;">What it maps</h3>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px;">
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:118px;text-align:center">kernel ABI</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Syscalls joined to their per-architecture numbers, with the calls that are simply not wired on an architecture recorded as absent rather than missing. Error codes carry the inverted index: which calls can return them.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:118px;text-align:center">process state</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">The <code>/proc</code> surface as documented, and separately the paths tracing actually touched &mdash; which is a larger set, because the documented pages do not index everything a running program reads.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:118px;text-align:center">userland</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Library symbols with the shared object that provides each one; the IPC mechanisms resolved against the spine. This is the bridge that turns an ELF import into a syscall.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:118px;text-align:center">programs</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">The section 1 and 8 program surface, with documented flags and sub-commands, and every cross-reference resolved rather than asserted. Where a page states nothing, the record says so and names the layer that will fill it.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:118px;text-align:center">platforms</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Platform identities and what is installed on each, so a fact can be keyed to one userland on one architecture instead of to &ldquo;Linux&rdquo;.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:118px;text-align:center">network</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">The IANA service, protocol and special-purpose address registries, turned into directional assertions: what an inbound connection to a port means, what an outbound one means, and which addresses should never appear at all.</span>
+            </div>
+          </div>
+          <h3 style="font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);margin:0 0 8px;letter-spacing:.4px;">models/datasets/sources</h3>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">
+            The inputs: anything a build reads and nothing writes. One directory per origin, named for where it
+            came from rather than for what consumes it, under rules that exist so any figure on this site can be
+            walked back to something with a date and a checksum behind it.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:104px;text-align:center">read-only</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Nothing is edited in place or rewritten by a tool. A correction to a source is a new retrieval, not a patch.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:104px;text-align:center">manifested</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Every directory carries a manifest: what it is, where it came from, the date it was retrieved, the tool that reads it, what it feeds, and a checksum and size per file. A corpus that arrived without one gets a manifest recording what is actually known, including that its origin is unknown.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:104px;text-align:center">versioned</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">A versioned source pins its version in the directory name, so a later release is a new directory and a rebuild against either stays reproducible.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:104px;text-align:center">unmerged</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Two origins are two directories even when they describe the same thing, so no record inherits authority it never had.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:104px;text-align:center">raw</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Probe output and scrapes land unparsed. Parsing belongs to the tools, and its result belongs to a generated dataset &mdash; never back in the source.</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);">
+              <span style="font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;color:var(--accent);background:rgba(200,120,40,.12);border:1px solid rgba(200,120,40,.3);min-width:104px;text-align:center">no telemetry</span>
+              <span style="font-family:var(--body);font-size:10px;color:var(--text-dim);line-height:1.65;flex:1">Collection runs live elsewhere: they evaluate the model rather than feed it, and that separation is the leakage boundary.</span>
+            </div>
+          </div>
+          <p style="font-family:var(--body);font-size:11px;color:var(--text-dim);line-height:1.75;margin-bottom:16px;">
+            Between them these two directories are what makes a coverage claim traceable. An event key on this
+            site resolves to an analytic and a data component, that resolves to what the kernel actually exposes,
+            and that resolves in turn to a documented page, a traced run or an ELF header &mdash; each with a
+            retrieval date and a hash standing behind it.
+          </p>
+
+          <p style="font-size:10px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:12px;">
+            MITRE ATT&amp;CK&reg; &copy; 2026 The MITRE Corporation. ATT&amp;CK is a trademark of The MITRE Corporation.<br>
+            eBPF documentation &copy; the eBPF-Docs Authors (BSD-2-Clause). Kernel definitions from the Linux kernel (GPL-2.0/BSD-2-Clause).
+          </p>
+
+        </div>
       </div>
     </div>
   </div>
   <div id="sp">
     <button id="sp-close" onclick="closePanel()">&#x2715; CLOSE</button>
     <div id="sp-body">
-      <div class="sp-empty">Click any node in the graph<br>to view details, event keys &amp; eBPF mappings</div>
+      <div class="sp-empty">No node selected</div>
     </div>
   </div>
 </div>
 
 <div id="tt"></div>
 <div id="toast">Copied to clipboard</div>
-<script src="assets/data/data.min.js?v=3f055cdf"></script>
-<script src="assets/js/kestrel.min.js?v=e36ef6ec"></script>
 <script src="assets/js/nav.min.js?v=5cb7abb1"></script>
 </body>
 </html>
