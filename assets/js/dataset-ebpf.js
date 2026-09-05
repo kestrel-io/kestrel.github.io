@@ -17,7 +17,11 @@
   };
 
   const CARD = 'background:var(--bg2);border:1px solid var(--border);padding:16px 20px;border-radius:2px;border-left:3px solid';
-  const ROW  = 'display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);';
+  /* Wrapping matters only on a narrow screen, where the row's seven or eight
+     cells run past the edge of a panel that does not scroll sideways — the
+     kernel version and the source link end up unreachable rather than
+     merely off to the right. At full width the row fits and never wraps. */
+  const ROW  = 'display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border);';
   const CHIP = 'font-family:var(--mono);font-size:9px;padding:2px 6px;white-space:nowrap;';
   const DIM  = 'font-family:var(--mono);font-size:9px;color:var(--text-dim)';
 

@@ -1515,7 +1515,15 @@ function renderCampaignCard(c, techs){
       tr.classList.toggle('expanded', !open);
     });
   });
-  card.appendChild(tbl);
+  /* Eight columns with widths of their own come to about 600 px, so on a
+     narrow screen the last of them fall outside the card. The card sits in a
+     panel that clips horizontally, so without a scroller of its own the
+     priority, weight and event-key columns are not merely off-screen — they
+     cannot be reached at all. */
+  const tblWrap = document.createElement('div');
+  tblWrap.className = 'camp-tech-wrap';
+  tblWrap.appendChild(tbl);
+  card.appendChild(tblWrap);
   return card;
 }
 

@@ -222,50 +222,108 @@ const CARRIER_DATA = {"keys":[["TA0001_T1078_000_AN1544_DC0002","Valid Accounts"
   /* ---------------- peak labels ------------------------------------- */
   /* The only labels on the plot, and each is a whole taxonomy key. No
      leader line: the label sits beside its own peak, and rises and
-     falls with it. */
-  const CH = 5.75, LH = 13, GAP = 9;
-  const STEPS = [];
-  for (const dy of [-9, -22, 6, -35, 19]) for (const side of [1, -1]) STEPS.push({ dy, side });
+     falls with it.
+   *
+   *
+   * The plot is drawn in viewBox units and then scaled to whatever width
+   * it is given, so the type scales with it. On a desktop the 1180-unit
+   * box lands at about 960 px, where a 9.5-unit key reads at 7.7 px. On a
+   * phone the same box lands at about 350 px and the same key reads at
+   * under 3 px, which is not small type -- it is a smear.
+   *
+   * So the type is sized in the units that put it back at 7.7 px on the
+   * screen it is actually on -- the size it was drawn at -- and every
+   * measurement the placement depends on (character width, line height,
+   * the gap to the peak, the ladder of offsets tried) is scaled with it.
+   * Bigger type needs more room, so fewer keys fit; the plot takes as
+   * many as it can place and the count follows, exactly as it does at
+   * full width. A few keys that can be read beat twenty that cannot.
+   *
+   * The scale clamps at 1, so a desktop is left exactly as it was.
+   */
+  const BASE_FONT = 9.5, TARGET_PX = 7.7, MAX_SCALE = 3.2;
   const overlap = (a, b) => !(a.x1 > b.x2 || a.x2 < b.x1 || a.y1 > b.y2 || a.y2 < b.y1);
 
-  const marks = [];
-  for (const m of marks0) {
-    const w = m.key.length * CH + 2;
-    for (const s of STEPS) {
-      const end = s.side < 0, tx = m.x + s.side * GAP, ty = m.y + s.dy;
-      const box = { x1: end ? tx - w : tx, x2: end ? tx : tx + w,
-                    y1: ty - LH, y2: ty + 3 };
-      if (box.x1 < 14 || box.x2 > VB.w - 14 || box.y1 < VIEW.top + 6) continue;
-      if (marks.some(o => overlap(box, o.box))) continue;
-      marks.push({ ...m, box, tx, ty, end });
-      break;
-    }
-  }
+  const labelScale = () => {
+    const w = svg.getBoundingClientRect().width;
+    if (!w) return 1;                       /* not laid out yet */
+    const units = TARGET_PX * (VB.w / w);   /* user units per readable px */
+    return Math.min(MAX_SCALE, Math.max(1, units / BASE_FONT));
+  };
 
-  const markNodes = marks.map(m => {
-    const g = el("g", { opacity: 0 });
-    g.appendChild(el("circle", { class: "cl-peak-dot",
-      cx: round2(m.x), cy: round2(m.y), r: 2.2 }));
-    const t = el("text", { class: "cl-peak-key",
-      x: round2(m.tx), y: round2(m.ty), "text-anchor": m.end ? "end" : "start" });
-    t.textContent = m.key;
-    g.appendChild(t);
-    gPeaks.appendChild(g);
-    return g;
-  });
+  let marks = [], markNodes = [], placedScale = 0;
+
+  function placeLabels(S) {
+    const CH = 5.75 * S, LH = 13 * S, GAP = 9 * S, FS = BASE_FONT * S;
+    const STEPS = [];
+    for (const dy of [-9, -22, 6, -35, 19]) for (const side of [1, -1])
+      STEPS.push({ dy: dy * S, side });
+
+    marks = [];
+    for (const m of marks0) {
+      const w = m.key.length * CH + 2;
+      for (const s of STEPS) {
+        const end = s.side < 0, tx = m.x + s.side * GAP, ty = m.y + s.dy;
+        const box = { x1: end ? tx - w : tx, x2: end ? tx : tx + w,
+                      y1: ty - LH, y2: ty + 3 };
+        if (box.x1 < 14 || box.x2 > VB.w - 14 || box.y1 < VIEW.top + 6) continue;
+        if (marks.some(o => overlap(box, o.box))) continue;
+        marks.push({ ...m, box, tx, ty, end });
+        break;
+      }
+    }
+
+    while (gPeaks.firstChild) gPeaks.removeChild(gPeaks.firstChild);
+    markNodes = marks.map(m => {
+      const g = el("g", { opacity: 0 });
+      g.appendChild(el("circle", { class: "cl-peak-dot",
+        cx: round2(m.x), cy: round2(m.y), r: (2.2 * Math.min(S, 2)).toFixed(2) }));
+      const t = el("text", { class: "cl-peak-key",
+        x: round2(m.tx), y: round2(m.ty), "text-anchor": m.end ? "end" : "start" });
+      /* Inline, because the stylesheet's own font-size would win over a
+         presentation attribute. The halo grows with the type or it stops
+         separating the key from the traces behind it. */
+      t.style.fontSize = FS.toFixed(2) + "px";
+      t.style.strokeWidth = (2.6 * S).toFixed(2) + "px";
+      t.textContent = m.key;
+      g.appendChild(t);
+      gPeaks.appendChild(g);
+      return g;
+    });
+
+    placedScale = S;
+    reportPlaced();
+  }
 
   /* ---------------- tables (standalone page only) ------------------- */
 
   const shortId = s => s.replace("CPU/MEMORY/DISK/NET", "CPU/MEM/DISK/NET");
   /* Only the keys that were actually placed reach the page: the table
-     and the counts describe what is on the plot, never what was offered. */
-  const keyBody = document.getElementById("cl-key-body");
-  if (keyBody) keyBody.innerHTML = marks
-    .map(m => `<tr><td class="key">${m.key}</td><td class="nm">${m.name}</td>` +
-      `<td>${String(m.k + 1).padStart(2, "0")}</td></tr>`).join("");
-  if (document.querySelectorAll) {
+     and the counts describe what is on the plot, never what was offered.
+     How many that is depends on the width, so this runs with the
+     placement rather than once. */
+  function reportPlaced() {
+    const keyBody = document.getElementById("cl-key-body");
+    if (keyBody) keyBody.innerHTML = marks
+      .map(m => `<tr><td class="key">${m.key}</td><td class="nm">${m.name}</td>` +
+        `<td>${String(m.k + 1).padStart(2, "0")}</td></tr>`).join("");
     for (const n of document.querySelectorAll(".cl-count")) n.textContent = marks.length;
   }
+
+  placeLabels(labelScale());
+
+  /* Rotating the phone, or dragging a desktop window narrow, changes how
+     much room a key has. Re-place only when the scale has actually moved,
+     so a resize that does not change the type does not rebuild the keys. */
+  let placeTimer;
+  addEventListener("resize", () => {
+    clearTimeout(placeTimer);
+    placeTimer = setTimeout(() => {
+      const S = labelScale();
+      if (Math.abs(S - placedScale) > 0.05) placeLabels(S);
+    }, 200);
+  });
+
   const rowBody = document.getElementById("cl-row-body");
   if (rowBody) rowBody.innerHTML = (CARRIER_DATA.all || [])
     .map(r => `<tr><td>${shortId(r.id)}</td><td>${r.total}</td>` +
