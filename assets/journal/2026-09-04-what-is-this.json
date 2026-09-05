@@ -1,7 +1,7 @@
 {
-  "title": "So what is this thing, anyway?",
+  "title": "What is this?",
   "date": "2026-09-04",
-  "tldr": "The point of what Kestrel is, and what I want it is designed to do.",
+  "tldr": "A proof of concept lives, who cares about the details.",
   "contents": [
     "## Active vs. Passive",
     "Looking at todays defensive posture, most solutions are compliance, signature and reactionary. Everyone speaks about active defense, and kill-chains, but I have yet to see anything that really fits the bill.",
@@ -13,7 +13,7 @@
     "## Where the framework fits in",
     "This is where yesterday connects to today. The MITRE ATT&amp;CK&reg; framework is basically a catalog of the moves attackers actually make, written down by people who have watched them happen. Kestrel comes preloaded with that catalog, so it is not guessing at what 'suspicious' means. It is comparing what it sees against behavior somebody already documented. The [ATT&amp;CK&reg; Visualized](visualized.html) page is my attempt to look at that whole catalog at once.",
     "## The goal",
-    "Fewer alerts nobody reads, and more decisions that actually get made. If this works the way I want, the boring stuff stays quiet and the real thing gets caught early enough to still matter. That is the entire goal. Everything else is detail."
+    "Fewer alerts nobody reads, and more decisions that actually get made. If this works the way I want, the boring stuff stays quiet and the real thing gets caught early enough to still matter. That is the entire goal."
   ],
   "tags": ["overview", "goals", "kestrel"]
 }
