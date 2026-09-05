@@ -39,12 +39,15 @@ html,body{
   background:var(--bg);color:var(--text);
   font-family:var(--body);font-size:15px;
 }
-/* height:100% resolves against the largest the viewport can get, so on a
-   phone the foot of the layout — a toolbar, the bottom of a graph — sits
-   behind the browser's own chrome. dvh is what is actually on screen. The
-   page never scrolls, so the value does not move about underneath us. */
-@supports (height: 100dvh){
-  html,body{height:100dvh}
+/* height:100% resolves against the largest viewport the browser can offer,
+   so on a phone the foot of the layout sits behind the browser's own chrome.
+   svh is the height with that chrome fully extended: the smallest the
+   viewport ever gets, and so the only value that cannot put content out of
+   reach. dvh is wrong here — it is the *current* height, which iOS reports
+   as the large viewport until a scroll collapses the toolbars, and on these
+   pages nothing scrolls to collapse them. */
+@supports (height: 100svh){
+  html,body{height:100svh}
 }
 
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -828,6 +831,92 @@ body.home-body{
   body.nav-open .tab:nth-child(odd){border-right:1px solid var(--border)}
 }
 
+/* ═══ MOBILE LAYOUT — THE DOCUMENT SCROLLS (≤ 900 px) ════════════════════
+   At full width the page is an application shell: html and body are pinned
+   to the viewport with overflow:hidden, and scrolling is the job of one
+   panel inside it. That holds up on a desktop, where the viewport is a
+   stable rectangle.
+
+   On a phone it does not. The browser's own toolbars are part of the
+   viewport and they move, so a pinned root either leaves a strip of the
+   layout behind the chrome or, with overflow:hidden, puts the foot of the
+   page permanently out of reach — the toolbar under a table, the bottom of
+   a graph, the end of a journal entry. There is no gesture that recovers
+   it, which reads exactly as "the page will not scroll".
+
+   So below the drawer breakpoint the shell is taken apart and the page
+   becomes an ordinary document: the root scrolls, and the panels that used
+   to scroll inside it flow into it instead. What still needs a box of its
+   own gets a definite one — a force graph cannot draw into `height:auto`,
+   and a wide table still has to move sideways.
+   ═════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+
+  html,body{height:auto;min-height:100svh;overflow:visible}
+  #main   {display:block;flex:none;overflow:visible}
+  #content{display:block;flex:none;overflow:visible}
+  .panel  {flex:none;overflow:visible}
+  .panel.on{display:block}
+
+  /* A graph has nothing to size itself against once the flex chain is gone,
+     so it is given a window of its own and the page scrolls past it. */
+  .canvas:not(.canvas-doc){height:68svh;min-height:340px;flex:none}
+
+  /* Prose belongs to the page now, not to a scroller of its own. */
+  .canvas-doc{height:auto;max-height:none;overflow:visible}
+
+  /* A wide table keeps the sideways scroller it needs and gives up the
+     vertical one: it stands at full height and the document carries it.
+     The sticky header goes with it — a header can only stick to the box
+     that scrolls, and that box is no longer this one. */
+  /* overflow-y must be stated as hidden, not visible: a `visible` paired with
+     an `auto` on the other axis computes to `auto`, which would leave this a
+     vertical scroll container that swallows the gesture and has nothing to
+     scroll with it. At height:auto nothing is clipped by the hidden.
+
+     overscroll-behavior has to be relaxed on the vertical axis for the same
+     reason. `contain` earned its place when this box was the thing that
+     scrolled — it stopped the page rubber-banding once the table hit its
+     end. Now the table does not scroll vertically at all, so `contain` only
+     does the other half of its job: it refuses to hand the gesture on to
+     the document. A drag that starts anywhere over the table — which is
+     nearly the whole page — dies where it started. Sideways it still earns
+     its keep, stopping a horizontal swipe turning into a back-navigation. */
+  .twrap{
+    height:auto;max-height:none;flex:none;
+    overflow-x:auto;overflow-y:hidden;
+    overscroll-behavior-x:contain;overscroll-behavior-y:auto;
+  }
+
+  /* Closed, the panel would otherwise be an empty block in normal flow. */
+  #sp:not(.on){display:none}
+
+  /* Open, it is a sheet over the page rather than a column beside it. */
+  #sp.on{
+    position:fixed;inset:0;
+    width:100% !important;min-width:100% !important;
+    height:100svh;
+    z-index:200;border-left:none;
+  }
+  /* Its corner button is both the only way out and sitting on the title, so
+     it takes the top of the sheet as a full-width bar instead. */
+  #sp.on #sp-close{
+    position:static;
+    width:100%;
+    padding:13px 12px;
+    font-size:13px;
+    text-align:center;
+    background:var(--bg3);
+    border:0;border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  #sp.on .sp-name{padding-right:0}
+
+  /* The strip carries the menu button, so it stays reachable however far
+     down the document the reader has gone. */
+  #tagline{position:sticky;top:0;z-index:40}
+}
+
 /* ═══ THE KESTREL MARK, BELOW THE DESKTOP LAYOUT (≤ 900 px) ══════════════
    At full width the mark is dropped in at its natural 967x1389, fixed to the
    viewport at 0 0. On the 1440 the page is drawn for, that puts the bird's
@@ -851,6 +940,14 @@ body.home-body{
    is not there and jumping as the URL bar comes and goes.
    ═════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
+  /* A desktop panel is about as wide as the viewport, so the same 967-in-1440
+     fraction puts the bird on the same part of a panel as it does on the
+     hero. These are positioned against the element, not the viewport, and
+     have no header above them, so the offset stays at the corner. */
+  .canvas, .twrap{
+    --mark-size: calc(100% * 967 / 1440) auto;
+    --mark-pos: 0 0;
+  }
   .home-hero {
     background-attachment:scroll,scroll,scroll;
     /* 967 px of image across a 1440 px viewport. */
@@ -936,16 +1033,6 @@ body.home-body{
   .jr-page { min-width:24px; padding:4px 6px; font-size:11px; }
   .jr-card { padding:12px 14px; }
 
-  /* ── Side panel — full-screen overlay ── */
-  #sp.on {
-    position:fixed;
-    inset:0;
-    width:100% !important;
-    min-width:100% !important;
-    z-index:200;
-    border-left:none;
-  }
-
   /* ── Toolbars and filter rows scroll sideways at this width, which only
      works if it is visible that they do. These are scroll shadows: the two
      `local` layers travel with the content and the two `scroll` layers stay
@@ -1003,16 +1090,6 @@ body.home-body{
     text-shadow:0 1px 4px rgba(0,0,0,.75);
   }
 
-  /* ── The kestrel mark ──
-     At full size the mark is dropped in at its natural 967x1389 against the
-     top-left corner, which on a desktop panel shows the head and body down
-     the left-hand side. A phone panel is narrower than the bird's head, so
-     the same rule frames a corner of one eye. Fit the whole bird into the
-     panel and centre it instead: it stays a watermark at any width. */
-  .canvas, .twrap {
-    --mark-pos: center center;
-    --mark-size: auto min(62%, 340px);
-  }
   .canvas-doc { padding:16px 14px; }
 
   /* ── Tables — narrower cells, so a row is a few swipes and not a dozen ── */
@@ -1023,22 +1100,6 @@ body.home-body{
   #tt { max-width:calc(100vw - 24px); font-size:12.5px; padding:9px 11px; }
   #toast { left:12px; right:12px; bottom:12px; text-align:center; }
 
-  /* ── Side panel ──
-     At this width the panel is the whole screen, so the corner button it
-     carries at full width is both the only way out and sitting on top of
-     the title. Take it out of the corner and give it the top of the sheet:
-     a full-width bar, in front of the content rather than over it. */
-  #sp.on #sp-close {
-    position:static;
-    width:100%;
-    padding:13px 12px;
-    font-size:13px;
-    text-align:center;
-    background:var(--bg3);
-    border:0;border-bottom:1px solid var(--border);
-    flex-shrink:0;
-  }
-  #sp.on .sp-name { padding-right:0; }
   #sp-body { padding:14px 14px 28px; }
 
   /* A rendered table in a journal entry has no scroller of its own and sits
@@ -1056,9 +1117,10 @@ body.home-body{
   .home-hero {
     /* flex:none leaves the hero at content height, which on a phone ends
        well short of the fold — the grid and the mark stop mid-screen and
-       bare background runs to the bottom. */
+       bare background runs to the bottom. Growing it fills the screen; the
+       content still starts at the top, as it does at full width, so the
+       spare height falls below the copy rather than around it. */
     flex:1 0 auto;
-    justify-content:center;
     padding:30px 18px 44px;
   }
   .home-phrase { font-size:28px; letter-spacing:1px; }
