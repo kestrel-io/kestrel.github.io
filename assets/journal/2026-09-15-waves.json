@@ -1,0 +1,15 @@
+{
+  "title": "Waves...",
+  "date": "2026-09-15",
+  "tldr": "It's a way of looking at that wave and saying, 'Hey bud! Let's party!",
+  "contents": [
+    "Having worked as a spectrum manager for the last six years, the events & signals from the eBPF reminds me of a modulating waveform. Complex, seemingly random, and with a faint trace of a pattern.",
+    "## eBPF signals as a sinusoid?",
+    "Why not a wave? Having a large number of signals, each with their own distinct properties, why not convert it to a digital sinusoid?",
+    "## Oh hai reality!",
+    "The real problem is not just the physics of converting a digital signal to a radio wave, there are a variety of complexities; each signal having >5-10 properties, the signals properties overlapping with one another, one to one and one to many relations, identification and correlation of a signal to any number of possible combinations or typical behavioral patterns.",
+    "## n^n combinations",
+    "1146 taxonomies associated with Linux eBPF and the MITRE ATT&CK framework (maybe more?). Each taxonomy uses seven lists of an unlimited number of identifiers. The search space for a single signal is 7^1146, or 1.5e+974. How on earth will this work?"
+  ],
+  "tags": ["meta", "site", "journal"]
+}
