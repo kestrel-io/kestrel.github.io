@@ -638,6 +638,134 @@ body.home-body{
 }
 .eb-status code{color:var(--accent)}
 
+/* ── Signals (eBPF map producers & consumers) ─────────────────────────
+   Two pages, one model: signals-visualized.html draws the producer →
+   map → consumer flow, signals-matrix.html writes the same rows out as
+   a table. Colour carries one thing only — amber is a write, blue is a
+   read — so the rest of the surface stays in the text tokens. */
+#p-signals .toolbar .tsel{width:150px}
+#sg-count{margin-left:12px;color:var(--text-dim);white-space:nowrap;font-size:11px}
+#sg-count b{color:var(--accent)}
+
+/* The legend carries two kinds of swatch: a link is a line, a map is a
+   tile, and the shape says which of the two the colour belongs to. */
+.legend .ll{width:16px;height:2px;border-radius:1px;flex-shrink:0}
+.legend .lt{width:14px;height:9px;border:1px solid;border-radius:2px;flex-shrink:0}
+
+/* This legend has six entries and the diagram fills its box, so an
+   overlay in a corner would sit on top of real nodes. It is a footer
+   strip instead: the canvas is a column, the drawing takes what is left,
+   and nothing is ever hidden behind the key. */
+#cv-signals{display:flex;flex-direction:column}
+/* order beats DOM position: the drawing is the first row whatever else the
+   canvas holds, so the footer cannot be pushed above it. */
+#cv-signals svg{order:-1;flex:1 1 auto;min-height:0;height:auto}
+#cv-signals .legend{
+  position:static;flex-shrink:0;
+  flex-direction:row;flex-wrap:wrap;align-items:center;gap:5px 18px;
+  border:0;border-top:1px solid var(--border);
+  background:var(--bg2);padding:7px 14px;
+  pointer-events:none;
+}
+/* The credit rides at the right end of that same strip. */
+#cv-signals .legend .mitre-overlay{
+  position:static;margin-left:auto;
+  font-size:8.5px;letter-spacing:.6px;white-space:normal;text-align:right;
+  max-width:330px;display:block;
+}
+/* Narrow screens drop every legend (see the max-width:900px block). This
+   one also carries the source credit, which has to stay, so the strip comes
+   back as a corner overlay holding nothing but that. */
+@media (max-width: 900px){
+  #cv-signals .legend{
+    display:block;position:absolute;left:auto;right:14px;bottom:10px;
+    background:none;border:0;padding:0;
+  }
+  #cv-signals .legend .li{display:none}
+  #cv-signals .legend .mitre-overlay{margin:0;max-width:62vw}
+}
+
+/* A map's flow, as a badge at the head of its panel. */
+.sig-flow-pill{
+  display:inline-block;font-family:var(--body);font-size:10.5px;font-weight:700;
+  letter-spacing:.6px;text-transform:uppercase;
+  border:1px solid;padding:2px 9px;margin-bottom:10px;
+}
+/* The same fact in a table cell, where a dot does the work of the border. */
+.sig-flow-cell{display:inline-flex;align-items:center;gap:6px;font-size:12px;white-space:nowrap}
+.sig-flow-cell i{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Key / value pairs: the struct a map's key or value is, member by
+   member, with the comment the source keeps beside each one. */
+.sig-kv{
+  background:var(--bg3);border:1px solid var(--border);
+  border-left:3px solid var(--accent);
+  padding:8px 10px;margin-bottom:8px;
+}
+.sig-kv-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sig-kv-role{
+  font-family:var(--body);font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;color:var(--accent);
+}
+.sig-kv-type{font-family:var(--mono);font-size:11.5px;color:var(--text-hi);word-break:break-word}
+.sig-kv-scalar{font-size:12px;color:var(--text-dim);margin-top:4px;line-height:1.6}
+.sig-kv-src{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:6px;opacity:.8}
+
+.sig-fields{width:100%;border-collapse:collapse;margin-top:4px}
+.sig-fields td{
+  padding:3px 6px 3px 0;vertical-align:top;
+  border-bottom:1px solid rgba(90,100,96,.25);border-right:0;
+  font-size:11.5px;line-height:1.5;max-width:none;
+}
+.sig-fields tr:last-child td{border-bottom:0}
+.sig-f-type{font-family:var(--mono);color:var(--col-dc);white-space:nowrap}
+.sig-f-name{font-family:var(--mono);color:var(--text);word-break:break-word}
+.sig-f-note{font-family:var(--body);color:var(--text-dim);font-size:11px}
+/* A member's declaration never breaks — `reaction_class` split over two
+   lines reads as two fields — so type and name share one cell and the
+   comment column absorbs whatever width is left. */
+.sig-f-decl{white-space:nowrap;padding-right:10px}
+.sig-fields:not(.sig-decl) .sig-f-note{width:99%}
+.sig-decl td{border-bottom:0;padding:2px 6px 2px 0}
+.sig-decl .sig-f-type{color:var(--text-dim);text-transform:uppercase;font-size:10px;letter-spacing:.6px}
+
+/* One program on one side of a map, with the calls that prove the edge. */
+.sig-edge{
+  background:var(--bg3);border-left:3px solid var(--accent);
+  padding:6px 9px;margin-bottom:5px;
+}
+.sig-edge-head{display:flex;align-items:center;gap:7px;cursor:pointer;flex-wrap:wrap}
+.sig-edge-head:hover .sig-edge-name{color:var(--accent)}
+.sig-edge-name{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--text)}
+.sig-site{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);line-height:1.6;margin-top:3px}
+.sig-site code{color:var(--text)}
+.sig-site-file{display:block;opacity:.65}
+
+/* Program chips: in a table cell, and in a program's own panel. */
+.sig-chip-row{display:flex;flex-wrap:wrap;gap:3px}
+.sig-chip{
+  display:inline-block;font-family:var(--mono);font-size:10px;
+  padding:1px 6px;border:1px solid var(--border);color:var(--text-dim);
+  white-space:nowrap;cursor:pointer;transition:color .12s,border-color .12s;
+}
+.sig-chip:hover{color:var(--text-hi)}
+.sig-chip-p{border-color:rgba(200,120,40,.45);color:var(--col-tac)}
+.sig-chip-c{border-color:rgba(120,168,216,.45);color:#78a8d8}
+.sig-chip-more{border-style:dashed;color:var(--text-dim)}
+.sig-chip-more:hover{color:var(--accent);border-color:var(--accent)}
+.sp-chip.sig-chip-map{cursor:pointer;font-size:10px}
+.sp-chip.sig-chip-map:hover{color:var(--text-hi)}
+
+/* A one-line blurb under a table cell stays one line. */
+.sig-clip{
+  margin-top:2px;max-width:280px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* The flow diagram needs more panel than a node graph does: the key and
+   value tables are the point of the page. */
+body.signals #sp.on{width:440px;min-width:440px}
+
 /* ── Journey (journal) ── */
 #p-journey .toolbar .tsel{width:170px}
 #p-journey .toolbar input.tsel{width:210px}
