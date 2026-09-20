@@ -1,0 +1,11 @@
+{
+  "title": "Needles and haystacks",
+  "date": "2026-09-20",
+  "tldr": "A roll in the hay",
+  "contents": [
+    "The work so far reminds me of growning a variety of crops, each requires it's own care and attention, and each has it's own yield. Some crops are easy to grow, some are difficult, some are high yield, some are low yield. The work is a mix of all of these things.",
+    "## The haystack bundles nicely",
+    "The crop being harvested is a bit unwieldy, how each piece relates to another is not always clear, but the method of breaking the haystack into individual haybails is clear. The haybails are the individual datasets, each with their own structure and content, but all related to the same overall pivot points."
+  ],
+  "tags": ["dataset", "signals", "journal"]
+}
