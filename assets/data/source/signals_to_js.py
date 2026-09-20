@@ -837,7 +837,69 @@ FLOW_LABEL = {
     "declared-only": "Declared, no reachable in-kernel access",
 }
 
+# ---------------------------------------------------------------- prose
+# The docs on these pages are the sources' own comments, quoted. A comment
+# that names a source file is naming something the pages do not show, so the
+# mention is rewritten: a file that IS a program becomes that program's name
+# (the unit the pages are written in), anything else is dropped along with
+# the preposition that introduced it, so the sentence still parses. Research
+# notes (*.md) are citations, not source paths, and stay.
+FILE_RE    = r"[\w][\w/.-]*\.(?:c|h|rs|py)"
+FILE_TOKEN = re.compile(r"(?<![\w/.-])(" + FILE_RE + r")('s)?(?![\w/-])(?!\.\w)")
+PROSE_PROG = {}
+
+def _prose_program_names():
+    """basename of a program's source, and of its header -> the program name."""
+    out = {}
+    for pr in PROGS:
+        stem = pr["stem"]
+        m = PROG_TYPE_RE.match(stem)
+        nm = m.group(1) if m else stem.upper()
+        out[os.path.basename(pr["file"])] = nm
+        out[stem + ".h"] = nm
+    return out
+
+def clean_prose_files(text):
+    """Rewrite a quoted comment so it names no source file.
+
+    A file that IS a program becomes that program's name -- the unit these
+    pages are written in. Anything else is removed along with whatever
+    introduced it (a list separator, the preposition, or the parenthetical it
+    sat in) so the sentence still parses. Nothing is touched unless a file
+    name was actually found: `dp_count()` keeps its parentheses."""
+    if not text or "." not in text:
+        return text
+
+    def swap(m):
+        nm = PROSE_PROG.get(os.path.basename(m.group(1)))
+        return (nm + (m.group(2) or "")) if nm else "\x00"
+
+    out = FILE_TOKEN.sub(swap, text)
+    if "\x00" not in out:
+        return out
+
+    # A parenthetical that OPENS with a removal was an aside ABOUT that file
+    # -- "(tests/guards.rs holds that rule)" has no subject left -- so the
+    # whole aside goes. This also covers a parenthetical that was nothing but
+    # file names.
+    out = re.sub(r"\s*\(\s*\x00[^()]*\)", "", out)
+    # A removal in running prose takes the preposition that introduced it.
+    # This runs BEFORE the separator rules: "by <file>, and" has to lose the
+    # "by", and a comma-first rule would consume the marker they match on.
+    out = re.sub(r"\s+(?:in|by|from|at|to|of|under|with|via|than|inside|on|and)\s+\x00",
+                 "", out, flags=re.IGNORECASE)
+    # Otherwise a removal takes whichever list separator attached it.
+    out = re.sub(r"\s*[,;]\s*\x00", "", out)
+    out = re.sub(r"\x00\s*[,;]\s*", "", out)
+    out = out.replace("\x00", "")
+    out = re.sub(r"\(\s+", "(", out)
+    out = re.sub(r"\s+([,.;:)])", r"\1", out)
+    out = re.sub(r"\s{2,}", " ", out)
+    return out.strip()
+
 # ---- programs ----------------------------------------------------------
+PROSE_PROG.update(_prose_program_names())
+
 prog_out, prog_index = [], {}
 for pr in PROGS:
     stem = pr["stem"]
@@ -860,7 +922,7 @@ for pr in PROGS:
         "gates": [g for g in pr["gates"] if g.startswith(("KESTREL_USE_", "KESTREL_HELPER_",
                                                           "KESTREL_PATH", "KESTREL_REACT",
                                                           "KESTREL_POLICY", "KESTREL_TREE"))],
-        "doc": pr["doc"][:600],
+        "doc": clean_prose_files(pr["doc"])[:600],
         "produces": [], "consumes": [],
     })
 
@@ -874,9 +936,9 @@ def want_type(t):
     if nm in TYPES or nm not in STRUCTS: return
     st = STRUCTS[nm]
     TYPES[nm] = {"name": "struct " + nm, "file": st["file"], "line": st["line"],
-                 "doc": st["doc"][:700],
+                 "doc": clean_prose_files(st["doc"])[:700],
                  "fields": [{"type": f["type"], "name": f["name"], "bits": f["bits"],
-                             "note": f["note"][:220]} for f in st["fields"]]}
+                             "note": clean_prose_files(f["note"])[:220]} for f in st["fields"]]}
     for f in st["fields"]:
         want_type(f["type"])
 
@@ -894,7 +956,7 @@ for name, rec in sorted(MAPS.items()):
         "pinned": rec["pinned"],
         "key": rec["key"] or rec["key_size"], "value": rec["value"] or rec["value_size"],
         "file": rec["decl_file"], "line": rec["decl_line"],
-        "doc": rec["doc"][:900], "gates": rec["gates"], "macro": rec["macro"],
+        "doc": clean_prose_files(rec["doc"])[:900], "gates": rec["gates"], "macro": rec["macro"],
         "flow": flow_of(rec),
         "owners": sorted(prog_index[o] for o in rec["owners"] if o in prog_index),
         "producers": [{"prog": prog_index[f], "sites": st[:6]} for f, st in prods if f in prog_index],

@@ -8,7 +8,7 @@
 ------------------------------------------------------- */
 
 const COLS = ['details', 'name', 'family', 'type', 'scope', 'key', 'value',
-              'producers', 'consumers', 'flow', 'where'];
+              'producers', 'consumers', 'flow', 'owners'];
 
 let sCol = 'name', sAsc = true;
 
@@ -22,7 +22,7 @@ const cellText = {
   producers: m => m.producers.length,
   consumers: m => m.consumers.length,
   flow:      m => SIGNALS.flow_label[m.flow] || m.flow,
-  where:     m => m.file,
+  owners:    m => (m.owners.length ? PROGS[m.owners[0]].name : ''),
 };
 
 function sortRows(rows) {
@@ -48,14 +48,13 @@ const EMPTY = `<span style="color:var(--text-dim)">—</span>`;
    the details panel has the whole list, with the call sites. */
 const CHIP_CAP = 6;
 
-function progChips(list, role, i) {
-  if (!list.length) return EMPTY;
-  const cls = role === 'produce' ? 'sig-chip-p' : 'sig-chip-c';
-  const shown = list.slice(0, CHIP_CAP).map(e =>
-    `<span class="sig-chip ${cls}" data-prog="${e.prog}" ` +
-    `title="${escHtml(DOMAIN_LABEL[PROGS[e.prog].domain] || PROGS[e.prog].domain)} program — open details">` +
-    `${escHtml(PROGS[e.prog].name)}</span>`).join('');
-  const rest = list.length - CHIP_CAP;
+function progChips(ids, cls, i) {
+  if (!ids.length) return EMPTY;
+  const shown = ids.slice(0, CHIP_CAP).map(pi =>
+    `<span class="sig-chip ${cls}" data-prog="${pi}" ` +
+    `title="${escHtml(DOMAIN_LABEL[PROGS[pi].domain] || PROGS[pi].domain)} program — open details">` +
+    `${escHtml(PROGS[pi].name)}</span>`).join('');
+  const rest = ids.length - CHIP_CAP;
   return `<div class="sig-chip-row">${shown}${rest > 0
     ? `<span class="sig-chip sig-chip-more" data-row="${i}">+${rest} more</span>` : ''}</div>`;
 }
@@ -88,14 +87,14 @@ function fmtCell(col, m, i) {
     case 'value':
       return m.value ? `<span class="td-mono">${escHtml(m.value)}</span>` : EMPTY;
     case 'producers':
-      return progChips(m.producers, 'produce', i);
+      return progChips(m.producers.map(e => e.prog), 'sig-chip-p', i);
     case 'consumers':
-      return progChips(m.consumers, 'consume', i);
+      return progChips(m.consumers.map(e => e.prog), 'sig-chip-c', i);
     case 'flow':
       return `<span class="sig-flow-cell" style="color:${FLOW_COLOR[m.flow]}">` +
              `<i style="background:${FLOW_COLOR[m.flow]}"></i>${escHtml(FLOW_SHORT[m.flow])}</span>`;
-    case 'where':
-      return `<span class="td-mono" style="font-size:10.5px">${escHtml(m.file)}:${m.line}</span>`;
+    case 'owners':
+      return progChips(m.owners, '', i);
     default:
       return EMPTY;
   }

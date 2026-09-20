@@ -709,7 +709,6 @@ body.home-body{
 }
 .sig-kv-type{font-family:var(--mono);font-size:11.5px;color:var(--text-hi);word-break:break-word}
 .sig-kv-scalar{font-size:12px;color:var(--text-dim);margin-top:4px;line-height:1.6}
-.sig-kv-src{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:6px;opacity:.8}
 
 .sig-fields{width:100%;border-collapse:collapse;margin-top:4px}
 .sig-fields td{
@@ -721,11 +720,28 @@ body.home-body{
 .sig-f-type{font-family:var(--mono);color:var(--col-dc);white-space:nowrap}
 .sig-f-name{font-family:var(--mono);color:var(--text);word-break:break-word}
 .sig-f-note{font-family:var(--body);color:var(--text-dim);font-size:11px}
-/* A member's declaration never breaks — `reaction_class` split over two
-   lines reads as two fields — so type and name share one cell and the
-   comment column absorbs whatever width is left. */
-.sig-f-decl{white-space:nowrap;padding-right:10px}
-.sig-fields:not(.sig-decl) .sig-f-note{width:99%}
+/* The member list of a key or value struct. One grid for the whole list, so
+   every type sits in one column and every name in the next — a per-member
+   layout would let each row pick its own widths and nothing would line up.
+   The comment takes a line of its own beneath, spanning both: at 440px a
+   third inline column leaves none of the three readable. */
+/* Exactly two columns: a member emits two cells, so a third would be filled
+   by the NEXT member's type and the list would flow sideways. */
+.sig-members{
+  display:grid;grid-template-columns:max-content 1fr;
+  column-gap:12px;margin-top:5px;
+}
+.sig-members .t,.sig-members .n{
+  font-family:var(--mono);font-size:11.5px;line-height:1.55;
+  white-space:nowrap;padding:2px 0;
+}
+.sig-members .t{color:var(--col-dc)}
+.sig-members .n{color:var(--text)}
+.sig-members .c{
+  grid-column:1/-1;
+  font-family:var(--body);font-size:11px;color:var(--text-dim);
+  line-height:1.5;padding:0 0 6px 2px;
+}
 .sig-decl td{border-bottom:0;padding:2px 6px 2px 0}
 .sig-decl .sig-f-type{color:var(--text-dim);text-transform:uppercase;font-size:10px;letter-spacing:.6px}
 
@@ -739,7 +755,6 @@ body.home-body{
 .sig-edge-name{font-family:var(--body);font-size:12.5px;font-weight:600;color:var(--text)}
 .sig-site{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);line-height:1.6;margin-top:3px}
 .sig-site code{color:var(--text)}
-.sig-site-file{display:block;opacity:.65}
 
 /* Program chips: in a table cell, and in a program's own panel. */
 .sig-chip-row{display:flex;flex-wrap:wrap;gap:3px}

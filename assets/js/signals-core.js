@@ -59,18 +59,6 @@ function escHtml(s) {
     .replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 }
 
-function copy(text) {
-  navigator.clipboard.writeText(text).catch(() => {
-    const a = document.createElement('textarea');
-    a.value = text; document.body.appendChild(a); a.select();
-    document.execCommand('copy'); document.body.removeChild(a);
-  });
-  const t = document.getElementById('toast');
-  if (!t) return;
-  t.classList.add('on');
-  setTimeout(() => t.classList.remove('on'), 1700);
-}
-
 /* A map's declared size, written the way the source writes it. */
 function entriesOf(m) {
   if (m.max_entries) return m.max_entries;
@@ -192,16 +180,12 @@ function chips(list, cls) {
     : '';
 }
 
-/* Where a map is declared. Only the headers are cited by path: a map written
-   out inside a program source is better answered by naming that program,
-   which is what the reader is actually after. */
-function declRow(m) {
-  if (m.file.startsWith('include/')) {
-    const at = `crates/bpf/${m.file}:${m.line}`;
-    return `<div class="sp-rule" onclick="copy('${at.replace(/'/g, "\\'")}')">` +
-           `<span class="cp">COPY</span><code>${escHtml(at)}</code></div>`;
-  }
-  return `<div class="sp-chips">${m.owners.map(i =>
+/* Which eBPF programs declare this map. A path would answer a question
+   nobody on this page is asking; the program is the unit the rest of the
+   panel is written in. */
+function ownerChips(ids) {
+  if (!ids.length) return `<div class="sp-row-desc">None.</div>`;
+  return `<div class="sp-chips">${ids.map(i =>
     `<span class="sp-chip sig-chip-map" onclick="openProgPanel(${i})">` +
     `${escHtml(PROGS[i].name)}</span>`).join('')}</div>`;
 }
@@ -226,14 +210,15 @@ function typeBlock(label, typeName, map) {
     return `<div class="sig-kv">${out}</div>`;
   }
   if (t.doc) out += `<div class="sp-row-desc" style="margin:4px 0 7px">${escHtml(t.doc)}</div>`;
-  /* Type and name in one cell, the way the declaration reads; the comment
-     takes whatever width is left. */
-  out += '<table class="sig-fields"><tbody>' + t.fields.map(f =>
-    `<tr><td class="sig-f-decl"><span class="sig-f-type">${escHtml(f.type)}</span> ` +
-    `<span class="sig-f-name">${escHtml(f.name)}${f.bits ? ':' + escHtml(f.bits) : ''}</span></td>` +
-    `<td class="sig-f-note">${escHtml(f.note || '')}</td></tr>`).join('') +
-    '</tbody></table>';
-  out += `<div class="sig-kv-src">${escHtml(t.file)}:${t.line}</div>`;
+  /* One grid for the whole member list, so the type and the name line up
+     down the block however long any one of them is. The comment spans both
+     columns on its own line rather than fighting them for width — in a 440px
+     panel a third inline column would crush all three. */
+  out += '<div class="sig-members">' + t.fields.map(f =>
+    `<code class="t">${escHtml(f.type)}</code>` +
+    `<code class="n">${escHtml(f.name)}${f.bits ? ':' + escHtml(f.bits) : ''}</code>` +
+    (f.note ? `<div class="c">${escHtml(f.note)}</div>` : '')).join('') +
+    '</div>';
   return `<div class="sig-kv">${out}</div>`;
 }
 
@@ -250,14 +235,11 @@ function edgeBlock(m, which) {
   }
   return list.map(e => {
     const p = PROGS[e.prog];
-    /* A call site in a shared header is worth naming — that is where the
-       access is shared from. One in the program's own source is not: the
-       program is named on the line above. */
+    /* The function and the helper name the access; the file it lives in is
+       not something this page reports. */
     const sites = e.sites.map(s =>
-      `<div class="sig-site"><code>${escHtml(s.fn)}()</code> · ${escHtml(s.helper)}` +
-      (s.file.startsWith('include/')
-        ? `<span class="sig-site-file">${escHtml(s.file)}</span>` : '') +
-      `</div>`).join('');
+      `<div class="sig-site"><code>${escHtml(s.fn)}()</code> · ${escHtml(s.helper)}</div>`)
+      .join('');
     return `<div class="sig-edge" style="border-left-color:${color}">` +
            `<div class="sig-edge-head" onclick="openProgPanel(${e.prog})">` +
            `<span class="sig-edge-name">${escHtml(p.name)}</span>` +
@@ -291,9 +273,8 @@ function openMapPanel(i) {
         m.scope === 'shared' ? `1, shared by ${m.owners.length} program${m.owners.length > 1 ? 's' : ''}`
                              : `${m.owners.length}, one per declaring object`}</td></tr>` : '') +
     `</tbody></table>` +
-    `<div class="sig-kv-role" style="margin-bottom:4px">${
-      m.file.startsWith('include/') ? 'Declared in' : 'Declared by'}</div>` +
-    declRow(m) +
+    `<div class="sig-kv-role" style="margin-bottom:4px">Declared by</div>` +
+    ownerChips(m.owners) +
     (m.gates.length ? `<div class="sp-row-desc" style="margin-top:6px">Declared only when the object defines ${
       m.gates.map(g => `<code>${escHtml(g)}</code>`).join(' and ')}.</div>` : '') +
 
