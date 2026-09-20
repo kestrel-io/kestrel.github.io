@@ -737,10 +737,22 @@ body.home-body{
 }
 .sig-members .t{color:var(--col-dc)}
 .sig-members .n{color:var(--text)}
+/* The worked example, then the comment: both span the full width beneath the
+   declaration they belong to. */
+.sig-members .x{
+  grid-column:1/-1;
+  padding:1px 0 0 2px;line-height:1.5;
+}
+.sig-members .x code{
+  font-family:var(--mono);font-size:10.5px;color:var(--accent);
+  background:rgba(200,120,40,.1);border:1px solid rgba(200,120,40,.28);
+  padding:0 5px;margin-right:7px;white-space:pre-wrap;word-break:break-all;
+}
+.sig-members .x .d{font-family:var(--body);font-size:11px;color:var(--text)}
 .sig-members .c{
   grid-column:1/-1;
   font-family:var(--body);font-size:11px;color:var(--text-dim);
-  line-height:1.5;padding:0 0 6px 2px;
+  line-height:1.5;padding:2px 0 7px 2px;
 }
 .sig-decl td{border-bottom:0;padding:2px 6px 2px 0}
 .sig-decl .sig-f-type{color:var(--text-dim);text-transform:uppercase;font-size:10px;letter-spacing:.6px}

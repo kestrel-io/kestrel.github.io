@@ -926,19 +926,347 @@ for pr in PROGS:
         "produces": [], "consumes": [],
     })
 
+# ======================================================================
+#  EXAMPLES — a worked value for every key and value member
+#
+#  The example literals are ILLUSTRATIVE: constructed to show the encoding,
+#  not captured from a run. What they decode TO is not invented -- bit names,
+#  enum names and their values are read out of the headers, so an example
+#  either decodes against real constants or says only what the C type says.
+#  `basis` records which of those it was, and the About panel repeats it.
+# ======================================================================
+_INT   = re.compile(r"^\(?\s*(?:(0x[0-9a-fA-F]+)|(\d+))\s*[uUlL]*\s*\)?$")
+_SHIFT = re.compile(r"^\(?\s*1\s*[uUlL]*\s*<<\s*\(?\s*(\d+)\s*\)?\s*\)?$")
+
+# Family roots, longest first: KESTREL_E_EXEC belongs to KESTREL_E_, not to a
+# prefix guessed from its own last underscore.
+FAMILY_ROOTS = [
+    "KESTREL_HOOK_TRACEPOINT_IO_URING_", "KESTREL_HOOK_TRACEPOINT_",
+    "KESTREL_HOOK_LSM_", "KESTREL_VERDICT_SOURCE_", "KESTREL_BLOCK_REFUSE_",
+    "KESTREL_BLOCK_ORIGIN_", "KESTREL_ERRNO_CLASS_", "KESTREL_SOCK_FLAG_",
+    "KESTREL_CORR_VALID_", "KESTREL_L7_HAS_TLS_", "KESTREL_L7_IPPROTO_",
+    "KESTREL_L7_HAS_", "KESTREL_SIG_PROP_", "KESTREL_AUX_HAS_",
+    "KESTREL_NF_IPPROTO_", "KESTREL_LWT_IPPROTO_", "KESTREL_LWT_ETH_P_",
+    "KESTREL_IPPROTO_", "KESTREL_ETH_P_", "KESTREL_PATH_F_", "KESTREL_FV_SRC_",
+    "KESTREL_TEMPLATE_", "KESTREL_REACTION_", "KESTREL_WINDOW_", "KESTREL_PIVOT_",
+    "KESTREL_DRIFT_", "KESTREL_PRED_", "KESTREL_MODE_", "KESTREL_ADDR_",
+    "KESTREL_PATH_", "KESTREL_DROP_", "KESTREL_READ_", "KESTREL_TAG_",
+    "KESTREL_DIR_", "KESTREL_ENV_", "KESTREL_NS_", "KESTREL_E_",
+    "TELEMETRY_GUARD_", "TELEMETRY_PTRACE_", "TELEMETRY_PR_SET_", "TELEMETRY_TASK_",
+]
+CONSTS, FAMILIES = {}, {}
+# Families whose members are indices used as a shift, not values to OR:
+# KESTREL_E_BIT(e) is 1<<e, KESTREL_READ_BIT(class) is 1<<(class-1).
+INDEX_FAMILY = {"KESTREL_E_": 0, "KESTREL_READ_": 1, "KESTREL_PATH_": 1}
+
+def build_constant_tables():
+    for p in headers + sources:
+        for m in re.finditer(r"^#define\s+((?:KESTREL|TELEMETRY)_[A-Z0-9_]+)\s+([^\n/]+)",
+                             CODE[p], re.M):
+            name, raw = m.group(1), m.group(2).strip()
+            v, mm = None, _INT.match(raw)
+            if mm:
+                v = int(mm.group(1), 16) if mm.group(1) else int(mm.group(2))
+            else:
+                ms = _SHIFT.match(raw)
+                if ms: v = 1 << int(ms.group(1))
+            if v is not None:
+                CONSTS.setdefault(name, v)
+    for name, v in CONSTS.items():
+        for root in FAMILY_ROOTS:
+            if name.startswith(root) and name != root.rstrip("_"):
+                FAMILIES.setdefault(root, {})[name[len(root):]] = v
+                break
+    for root, vals in list(FAMILIES.items()):
+        # a family whose members are all distinct powers of two is a bitmask
+        nz = [v for v in vals.values() if v]
+        FAMILIES[root] = {
+            "values": vals,
+            "bitmask": bool(nz) and all(v & (v - 1) == 0 for v in nz)
+                       and len(set(nz)) == len(nz),
+        }
+
+def enum_pairs(name):
+    e = ENUMS.get(name)
+    if not e: return []
+    out, nxt = [], 0
+    for v in e["values"]:
+        raw = (v.get("value") or "").strip()
+        m = _INT.match(raw) if raw else None
+        if m: nxt = int(m.group(1), 16) if m.group(1) else int(m.group(2))
+        out.append((v["name"], nxt)); nxt += 1
+    return out
+
+# (struct, member) -> family root or "enum:<name>". The struct qualifies the
+# name because `flags` means one thing on a socket slot and another on a
+# record header.
+FIELD_FAMILY = {
+    ("kestrel_task_slot", "tags"): "KESTREL_TAG_",
+    ("kestrel_task_slot", "emitter_bits"): "KESTREL_E_",
+    ("kestrel_task_slot", "inherited_bits"): "KESTREL_E_",
+    ("kestrel_task_slot", "read_bits"): "KESTREL_READ_",
+    ("kestrel_task_slot", "errno_mask"): "KESTREL_ERRNO_CLASS_",
+    ("kestrel_task_slot", "last_path_class"): "KESTREL_PATH_",
+    ("kestrel_task_corr", "valid"): "KESTREL_CORR_VALID_",
+    ("kestrel_sock_slot", "flags"): "KESTREL_SOCK_FLAG_",
+    ("kestrel_sock_slot", "emitter_bits"): "KESTREL_E_",
+    ("kestrel_sock_slot", "peer_class"): "KESTREL_ADDR_",
+    ("kestrel_sock_slot", "owner_read_bits"): "KESTREL_READ_",
+    ("kestrel_lineage_seed", "tags"): "KESTREL_TAG_",
+    ("kestrel_lineage_seed", "inherited_bits"): "KESTREL_E_",
+    ("kestrel_ctl", "mode_flags"): "KESTREL_MODE_",
+    ("kestrel_ctl", "lane"): "enum:kestrel_lane",
+    ("kestrel_ctl", "reaction_ceiling"): "enum:kestrel_reaction_class",
+    ("kestrel_block_key", "kind"): "enum:kestrel_block_kind",
+    ("kestrel_block_entry", "reaction_class"): "enum:kestrel_reaction_class",
+    ("kestrel_path_value", "flags"): "KESTREL_PATH_F_",
+    ("kestrel_path_value", "path_class"): "KESTREL_PATH_",
+    ("kestrel_host_state", "drift_bits"): "KESTREL_DRIFT_",
+    ("kestrel_policy_aux", "flags"): "KESTREL_AUX_HAS_",
+    ("kestrel_envelope", "flags"): "KESTREL_ENV_",
+    ("kestrel_envelope", "lane"): "enum:kestrel_lane",
+    ("kestrel_pred", "op"): "KESTREL_PRED_",
+    ("kestrel_template", "window"): "KESTREL_WINDOW_",
+    ("kestrel_template", "pivot"): "KESTREL_PIVOT_",
+    ("kestrel_fv_spec", "src"): "KESTREL_FV_SRC_",
+    ("kestrel_verdict", "source"): "KESTREL_VERDICT_SOURCE_",
+    ("telemetry_blocking_state", "guard_bits"): "TELEMETRY_GUARD_",
+    ("telemetry_blocking_stuck", "state"): "TELEMETRY_TASK_",
+}
+# Members the headers describe precisely enough to quote; the generic rules
+# below would say something true but thinner.
+OVERRIDE = {
+  ("kestrel_task_slot","program_id"): ("4812",
+    "A kestrel_vocab id for the exec target's basename. 0 means the name is not in the vocabulary, which is the classifier's own gate."),
+  ("kestrel_task_slot","comm_id"): ("911",
+    "A kestrel_vocab id for comm. Re-interned by TRACEPOINT at prctl(PR_SET_NAME)."),
+  ("kestrel_task_slot","arg_bits"): ("0x00000005",
+    "One bit per AUTHORED argv needle this command line matched (kestrel_policy_args). 0 on a host whose collector wrote no needles."),
+  ("kestrel_task_slot","write_dests"): ("2",
+    "Distinct write-mode destinations this incarnation. Saturates at 255. The corpus reads it as 0, or >= 1; the exact count past that is not used."),
+  ("kestrel_task_slot","open_fanout"): ("37",
+    "Distinct inodes opened for reading this incarnation, saturating at 65535. This is node 7's N."),
+  ("kestrel_task_slot","fired_nodes"): ("0x0240",
+    "One bit per template node 1..16 that has fired this incarnation; a chain fires once per incarnation."),
+  ("kestrel_task_slot","last_inode"): ("3407875",
+    "The last write destination, kept so a repeat of the same inode does not count twice."),
+  ("kestrel_task_slot","last_read_inode"): ("3407875",
+    "The last inode opened for reading, the one-entry dedup behind open_fanout."),
+  ("kestrel_task_slot","err_run"): ("4",
+    "Consecutive failing syscalls, saturating at 255: a wrap to 0 would read as 'it just succeeded'."),
+  ("kestrel_task_slot","slow_run"): ("0",
+    "Consecutive syscalls over the baseline's latency threshold, saturating at 255."),
+  ("kestrel_task_corr","nsproxy"): ("0xffff9a1c0142b800",
+    "The nsproxy these inode numbers came from. Never published; compared per event to catch setns() and unshare()."),
+  ("kestrel_task_corr","ns_pid"): ("1",
+    "The pid as its own pid namespace numbers it, which is 1 for a container's init."),
+  ("kestrel_task_slot","read_bits"): ("0x05",
+    "KESTREL_READ_BIT(class) per credential class this incarnation read: bit (class - 1), so SHADOW is bit 0 and KEYRING is bit 2. Set by LSM file_open only."),
+  ("kestrel_sock_slot","owner_read_bits"): ("0x05",
+    "A copy of the owner task's read_bits taken at connect, because SOCK_OPS has no task slot of its own."),
+  ("kestrel_task_slot","last_cookie"): ("0",
+    "Declared but never written and never read -- zeroed at each new incarnation and nothing else touches it."),
+  ("kestrel_task_slot","flags"): ("0",
+    "Per-incarnation flags on the task slot; no bit names are defined in the headers yet."),
+  ("kestrel_sock_slot","weight_acc"): ("0", "Accumulated chain weight for this socket, 16-bit."),
+  ("kestrel_ctl","backends"): ("0x03",
+    "bit 0 CACHE, bit 1 TREE, bit 2 TEMPLATE -- which verdict backends the controller has enabled."),
+  ("kestrel_ctl","sample_shift"): ("4",
+    "Emit 1 in 2^n on an empty token bucket; 0 turns the tail sampler off."),
+  ("kestrel_ctl","interval_ns_shift"): ("20",
+    "The token refill interval as a power of two nanoseconds: 20 is about 1 ms."),
+  ("kestrel_ctl","sensor_tgid"): ("1742",
+    "The collector's own process, which no response may name. 0 = none given."),
+}
+
+# a family named in the member's own comment beats the table
+COMMENT_FAMILY = re.compile(r"(KESTREL_[A-Z0-9]+(?:_[A-Z0-9]+)*?_)\*|enum (kestrel_\w+)")
+
+def const_family_of(struct, field):
+    key = (struct, field["name"].split("[")[0])
+    if key in FIELD_FAMILY: return FIELD_FAMILY[key]
+    m = COMMENT_FAMILY.search(field.get("note") or "")
+    if m:
+        if m.group(2) and m.group(2) in ENUMS: return "enum:" + m.group(2)
+        if m.group(1) in FAMILIES: return m.group(1)
+    t = field["type"]
+    m = re.match(r"(?:const\s+)?enum\s+(\w+)$", t)
+    if m and m.group(1) in ENUMS: return "enum:" + m.group(1)
+    return None
+
+# ---- units and widths --------------------------------------------------
+WIDTH = {"__u8": 8, "__s8": 8, "__u16": 16, "__s16": 16, "__u32": 32, "__s32": 32,
+         "__u64": 64, "__s64": 64, "int": 32, "unsigned int": 32, "char": 8,
+         "bool": 8, "long": 64, "unsigned long": 64}
+
+def _art(bits):
+    """'An 8-bit', 'A 32-bit' -- the article follows how the number is said."""
+    return "An" if bits == 8 else "A"
+
+def human_ns(ns):
+    if ns < 1000: return f"{ns} ns"
+    if ns < 1_000_000: return f"{ns/1000:.1f} µs"
+    if ns < 1_000_000_000: return f"{ns/1e6:.1f} ms"
+    if ns < 60_000_000_000: return f"{ns/1e9:.2f} s"
+    return f"{ns/6e10:.1f} min"
+
+def human_bytes(n):
+    for u, d in (("GiB", 1 << 30), ("MiB", 1 << 20), ("KiB", 1 << 10)):
+        if n >= d: return f"{n/d:.1f} {u}"
+    return f"{n} B"
+
+# Words the member names are built from, so an undocumented member still gets
+# a description that follows the name rather than a shrug.
+TOKENS = {
+    "rx": "received", "tx": "transmitted", "sys": "syscall", "unint": "uninterruptible",
+    "ns": "nanoseconds", "ts": "timestamp", "ino": "inode number", "inum": "inode number",
+    "tgid": "thread-group id", "pid": "process id", "ppid": "parent process id",
+    "tid": "thread id", "uid": "user id", "gid": "group id", "euid": "effective user id",
+    "cgroup": "cgroup", "dev": "device", "lat": "latency", "hist": "histogram",
+    "errno": "errno", "prot": "protection bits", "vma": "virtual memory area",
+    "seq": "sequence number", "gen": "generation", "sum": "sum", "max": "maximum",
+    "min": "minimum", "cnt": "count", "n": "count", "len": "length", "sz": "size",
+    "src": "source", "dst": "destination", "addr": "address", "port": "port",
+    "proto": "protocol", "iface": "interface", "if": "interface", "blk": "block",
+    "acc": "accumulator", "run": "run length", "shad": "shadow", "scrat": "scratch",
+}
+def describe_name(name):
+    parts = [p for p in re.split(r"[_\d]+", name.split("[")[0]) if p]
+    words = [TOKENS.get(p, p) for p in parts]
+    return " ".join(words)
+
+def example_for(struct, f):
+    """(example literal, what it decodes to, basis)."""
+    name = f["name"].split("[")[0]
+    arr  = re.search(r"\[([^\]]*)\]", f["name"])
+    ty   = re.sub(r"^const\s+", "", f["type"]).strip()
+    note = (f.get("note") or "")
+    fam  = const_family_of(struct, f)
+
+    key = (struct, name)
+    if key in OVERRIDE:
+        ex, dec = OVERRIDE[key]
+        return ex, dec, "source"
+
+    # a note that is nothing but a constant name IS the value
+    nt = note.strip().rstrip(".")
+    if re.fullmatch(r"(?:KESTREL|TELEMETRY)_[A-Z0-9_]+", nt) and nt in CONSTS:
+        return str(CONSTS[nt]), f"{nt} = {CONSTS[nt]}.", "constants"
+
+    if name.startswith(("_pad", "_rsv", "_reserved")):
+        return "0", "Padding. Never written; not part of the ABI.", "type"
+
+    if ty.startswith(("struct ", "union ")):
+        inner = ty.split()[-1]
+        return "", f"The members of {ty}" + (f", listed under its own entry." if inner in TYPES_SEEN else "."), "type"
+
+    # ---- a named constant family ----------------------------------------
+    if fam and fam.startswith("enum:"):
+        pairs = [(n, v) for n, v in enum_pairs(fam[5:]) if not n.endswith(("_COUNT", "_MAX", "_SLOTS"))]
+        if pairs:
+            n, v = pairs[min(1, len(pairs) - 1)]
+            rest = ", ".join(f"{v2}={n2}" for n2, v2 in pairs[:5])
+            return str(v), f"{n} — one of {rest}", "constants"
+    if fam and fam in FAMILIES:
+        vals = {k: v for k, v in FAMILIES[fam]["values"].items()
+                if not k.endswith(("MAX", "COUNT", "SLOTS", "CAP", "NONE"))}
+        if vals and fam in INDEX_FAMILY and name.endswith("_bits"):
+            # the constants are bit POSITIONS; the member holds 1<<position
+            off = INDEX_FAMILY[fam]
+            picked = sorted(vals.items(), key=lambda kv: kv[1])[:2]
+            val = 0
+            for _n, v in picked: val |= 1 << max(0, v - off)
+            names = " | ".join(n for n, _v in picked)
+            allnames = ", ".join(f"{n}=bit {v - off}" for n, v in
+                                 sorted(vals.items(), key=lambda kv: kv[1])[:6])
+            return (f"0x{val:04x}", f"{names}. One bit per {fam.rstrip('_')} index: {allnames}",
+                    "constants")
+        if vals:
+            if FAMILIES[fam]["bitmask"]:
+                picked = sorted(vals.items(), key=lambda kv: kv[1])[:2]
+                val = 0
+                for _n, v in picked: val |= v
+                names = " | ".join(n for n, _v in picked)
+                allnames = ", ".join(f"{fam}{n}=0x{v:x}" for n, v in
+                                     sorted(vals.items(), key=lambda kv: kv[1])[:6])
+                return f"0x{val:04x}", f"{names}. Bits: {allnames}", "constants"
+            picked = sorted(vals.items(), key=lambda kv: kv[1])
+            n, v = picked[min(1, len(picked) - 1)]
+            rest = ", ".join(f"{v2}={n2}" for n2, v2 in picked[:5])
+            return str(v), f"{fam}{n} — one of {rest}", "constants"
+
+    # ---- an emitter index used as a bit position ------------------------
+    if name.endswith("_stamp") or name == "order_stamp":
+        return "[1,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0]", (
+            "One byte per emitter: the order it first fired this incarnation, "
+            "1-based, 0 for an emitter that has not fired."), "constants"
+
+    # ---- byte arrays -----------------------------------------------------
+    if arr and ty in ("__u8", "char", "unsigned char"):
+        if re.search(r"path|name|comm|exe|interp|args|filename", name):
+            return '"/usr/bin/curl"', f"A NUL-terminated string, at most {arr.group(1)} bytes.", "type"
+        return "00 00 00 00 …", f"{arr.group(1)} raw bytes.", "type"
+    if arr:
+        return "[0, 0, …]", f"{arr.group(1)} × {ty}.", "type"
+
+    bits = WIDTH.get(ty, 32)
+    cap  = (1 << bits) - 1
+    sat  = "saturates" in note.lower()
+
+    # ---- units the name settles -----------------------------------------
+    if name.endswith(("_ns", "_boottime")) or name in ("now", "enter_ts"):
+        stamp = bool(re.search(r"boottime|_ts$|^created|^first|^last|start|enter|emit|_at$", name))
+        v = 812_345_678_901 if stamp else 1_450_000
+        what = ("a point in time on the boot clock" if stamp else "a duration")
+        return str(v), f"{human_ns(v)} — {what}, in nanoseconds, {bits}-bit.", "unit"
+    if name.endswith("_bytes") or name.startswith("bytes_") or name in ("count_bytes",):
+        v = 1_048_576
+        return str(v), f"{human_bytes(v)} — a byte count, {bits}-bit.", "unit"
+    if name.endswith(("_ino", "_inum")):
+        return "3407875", f"An inode number, {bits}-bit. Stable across rename and hardlink.", "unit"
+    if name.endswith("_id") or name in ("cgroup_id", "node_id"):
+        return "12406", f"An opaque {bits}-bit id; compare it, do not interpret it.", "unit"
+    if name.endswith(("_hash", "cookie")) or name.startswith("hash"):
+        return "0x4c968a90ace3649b", f"A {bits}-bit hash; an identity to join on, not a value to read.", "unit"
+    if re.search(r"^(?:owner_)?(?:pid|tgid|ppid|tid|[eu]?uid|gid)(?:_at_exec)?$", name):
+        return "1742", f"{describe_name(name).capitalize()}, {bits}-bit.", "unit"
+    if name.endswith(("_port",)) or name in ("sport", "dport"):
+        return "443", f"A TCP/UDP port, {bits}-bit, host byte order at this point.", "unit"
+    if re.search(r"count|hits|_n$|fanout|dests|depth|entries|events|switches|errors|drops", name):
+        v = 7
+        extra = f" Saturates at {cap}: it is not decremented." if sat else ""
+        return str(v), f"{_art(bits)} {bits}-bit counter — {describe_name(name)}.{extra}", "unit"
+    if name.endswith(("_len", "_size")) or name in ("size", "len"):
+        return "64", f"A length in bytes, {bits}-bit.", "unit"
+    if name in ("seq", "generation") or name.endswith(("_generation", "_seq", "_version")):
+        return "3", f"{_art(bits)} {bits}-bit {describe_name(name)}; it only moves forward.", "unit"
+
+    # ---- nothing but the name and the width ------------------------------
+    return "0", f"{describe_name(name).capitalize()} — {bits}-bit {'unsigned' if ty.startswith('__u') or ty in ('unsigned int','unsigned long') else 'signed'}.", "type"
+
+TYPES_SEEN = set()
+
 # ---- types referenced by keys and values -------------------------------
 TYPES = {}
+build_constant_tables()
+
+def _member(struct, f):
+    ex, dec, basis = example_for(struct, f)
+    return {"type": f["type"], "name": f["name"], "bits": f["bits"],
+            "note": clean_prose_files(f["note"])[:220],
+            "example": ex, "decoded": dec, "basis": basis}
+
 def want_type(t):
     t = (t or "").strip()
     mm = re.match(r"(?:const\s+)?struct\s+([A-Za-z_]\w*)", t)
     if not mm: return
     nm = mm.group(1)
     if nm in TYPES or nm not in STRUCTS: return
+    TYPES_SEEN.add(nm)
     st = STRUCTS[nm]
     TYPES[nm] = {"name": "struct " + nm, "file": st["file"], "line": st["line"],
                  "doc": clean_prose_files(st["doc"])[:700],
-                 "fields": [{"type": f["type"], "name": f["name"], "bits": f["bits"],
-                             "note": clean_prose_files(f["note"])[:220]} for f in st["fields"]]}
+                 "fields": [_member(nm, f) for f in st["fields"]]}
     for f in st["fields"]:
         want_type(f["type"])
 
@@ -978,6 +1306,10 @@ data = {
                "Gates that only a kernel-capability probe sets (KESTREL_NO_*) are taken as "
                "unset, i.e. the capable-kernel build."),
     "counts": {"maps": len(map_out), "programs": len(prog_out),
+               "members": sum(len(t["fields"]) for t in TYPES.values()),
+               "basis": {k: sum(1 for t in TYPES.values() for f in t["fields"]
+                                if f["basis"] == k)
+                         for k in ("constants", "source", "unit", "type")},
                "shared": sum(1 for m in map_out if m["scope"] == "shared"),
                "edges": sum(len(m["producers"]) + len(m["consumers"]) for m in map_out)},
     "flow_label": FLOW_LABEL,

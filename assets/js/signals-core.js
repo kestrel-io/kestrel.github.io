@@ -214,11 +214,19 @@ function typeBlock(label, typeName, map) {
      down the block however long any one of them is. The comment spans both
      columns on its own line rather than fighting them for width — in a 440px
      panel a third inline column would crush all three. */
-  out += '<div class="sig-members">' + t.fields.map(f =>
-    `<code class="t">${escHtml(f.type)}</code>` +
-    `<code class="n">${escHtml(f.name)}${f.bits ? ':' + escHtml(f.bits) : ''}</code>` +
-    (f.note ? `<div class="c">${escHtml(f.note)}</div>` : '')).join('') +
-    '</div>';
+  out += '<div class="sig-members">' + t.fields.map(f => {
+    /* The example is the member's encoding made concrete; `decoded` says what
+       that literal means. The comment the source keeps follows, when there is
+       one — it is the only part of the three that the code wrote. */
+    const ex = f.example
+      ? `<div class="x"><code>${escHtml(f.example)}</code>` +
+        (f.decoded ? `<span class="d">${escHtml(f.decoded)}</span>` : '') + `</div>`
+      : (f.decoded ? `<div class="x"><span class="d">${escHtml(f.decoded)}</span></div>` : '');
+    return `<code class="t">${escHtml(f.type)}</code>` +
+           `<code class="n">${escHtml(f.name)}${f.bits ? ':' + escHtml(f.bits) : ''}</code>` +
+           ex +
+           (f.note ? `<div class="c">${escHtml(f.note)}</div>` : '');
+  }).join('') + '</div>';
   return `<div class="sig-kv">${out}</div>`;
 }
 
@@ -337,6 +345,15 @@ function openAboutPanel() {
     `${c.programs} program objects<br>${c.edges} producer / consumer edges</div>` +
     `<div class="sp-sec">How this was derived</div>` +
     `<div class="sp-row-desc">${escHtml(SIGNALS.method)}</div>` +
+    `<div class="sp-sec">About the examples</div>` +
+    `<div class="sp-row-desc">Every key and value member carries a worked example. ` +
+    `The literal is <b>illustrative</b> &mdash; constructed to show the encoding, not captured ` +
+    `from a run. What it decodes to is not invented: bit names, enum names and their values ` +
+    `are read out of the headers. Of ${SIGNALS.counts.members} members, ` +
+    `${SIGNALS.counts.basis.constants} decode against named constants, ` +
+    `${SIGNALS.counts.basis.source} quote the header's own wording, ` +
+    `${SIGNALS.counts.basis.unit} state a unit the member name settles, and ` +
+    `${SIGNALS.counts.basis.type} say only what the C type says.</div>` +
     `<div class="sp-sec">Generated</div>` +
     `<div class="sp-row-desc">${escHtml(SIGNALS.generated)} from <code>${escHtml(SIGNALS.source)}</code> ` +
     `by <code>assets/data/source/signals_to_js.py</code>.</div>`;
