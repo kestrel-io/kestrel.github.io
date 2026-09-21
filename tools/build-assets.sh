@@ -7,6 +7,7 @@
 #    tools/build-assets.sh --js       assets/js/*.js, assets/data/*.js  ->  *.min.js
 #    tools/build-assets.sh --journal  assets/journal/*.json             ->  assets/journal/journal.min.json
 #    tools/build-assets.sh --html     <script src="assets/{js,data}/X.js">  ->  X.min.js?v=<hash>
+#    tools/build-assets.sh --seo      page <head> metadata, robots.txt, sitemap.xml
 #
 #  .githooks/pre-commit runs this for whatever is staged and
 #  stages the results (enable once: git config core.hooksPath .githooks).
@@ -17,14 +18,15 @@ cd "$(git -C "$(dirname "$0")" rev-parse --show-toplevel)"
 
 ESBUILD_VERSION="0.28.2"
 
-do_js=0; do_journal=0; do_html=0
-if [ $# -eq 0 ]; then do_js=1; do_journal=1; do_html=1; fi
+do_js=0; do_journal=0; do_html=0; do_seo=0
+if [ $# -eq 0 ]; then do_js=1; do_journal=1; do_html=1; do_seo=1; fi
 for a in "$@"; do
   case "$a" in
     --js)      do_js=1 ;;
     --journal) do_journal=1 ;;
     --html)    do_html=1 ;;
-    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    --seo)     do_seo=1 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) echo "build-assets: unknown option '$a'" >&2; exit 2 ;;
   esac
 done
@@ -105,4 +107,9 @@ for page in sorted(glob.glob('*.html')):
 if not changed:
     print('  (all pages already reference current minified scripts)')
 HTMLPY
+fi
+
+if [ "$do_seo" = 1 ]; then
+  echo "build-assets: refreshing page metadata, robots.txt and sitemap.xml"
+  python3 tools/seo.py | sed 's/^/  /'
 fi

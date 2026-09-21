@@ -24,10 +24,16 @@ fi
 if printf '%s\n' "$staged" | grep -qE '^[^/]+\.html$'; then
   flags+=(--html)
 fi
+# The page table drives every <head>, robots.txt and sitemap.xml, so a staged
+# page or a staged table means the generated metadata has to be rebuilt too.
+if printf '%s\n' "$staged" | grep -qE '^([^/]+\.html|tools/seo\.py)$'; then
+  flags+=(--seo)
+fi
 [ ${#flags[@]} -gt 0 ] || exit 0
 
 outputs() {
-  ls assets/js/*.min.js assets/data/*.min.js assets/journal/journal.min.json ./*.html 2>/dev/null | sed 's#^\./##'
+  ls assets/js/*.min.js assets/data/*.min.js assets/journal/journal.min.json \
+     robots.txt sitemap.xml ./*.html 2>/dev/null | sed 's#^\./##'
 }
 dirty_before=$(git diff --name-only)
 tools/build-assets.sh "${flags[@]}"
@@ -43,7 +49,7 @@ for f in $(outputs); do
       # unrelated edit in flight is never pulled into someone else's commit.
       if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
         git diff --quiet -- "$f" && continue
-        git diff -U0 -- "$f" | grep -qE '^[+-][[:space:]]*<script[[:space:]]+src=' || continue
+        git diff -U0 -- "$f" | grep -qE '^[+-][[:space:]]*(<script[[:space:]]+src=|<title>|<meta |<link rel="canonical"|<!-- seo:)' || continue
       fi
       ;;
     *)

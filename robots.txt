@@ -1,0 +1,12 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Generated delivery copies and raw data: the pages that present
+# them are what should rank, not the payloads themselves.
+Disallow: /assets/data/
+Disallow: /assets/journal/
+Disallow: /assets/vendor/
+Disallow: /docs/
+
+Sitemap: https://kestrel-signals.io/sitemap.xml
