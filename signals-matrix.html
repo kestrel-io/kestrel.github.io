@@ -122,13 +122,12 @@
         <select id="sg-scope">
           <option value="shared" selected>Shared maps</option>
           <option value="">Every map</option>
-          <option value="per-object">Per-object maps</option>
-          <option value="program">Program-private maps</option>
+          <option value="object">Object-private maps</option>
         </select>
         <select id="sg-family"><option value="">All Families</option></select>
         <select id="sg-type"><option value="">All Map Types</option></select>
         <select id="sg-flow"><option value="">All Flows</option></select>
-        <select id="sg-domain"><option value="">All Domains</option></select>
+        <select id="sg-domain"><option value="">All Objects</option></select>
         <select id="sg-prog"><option value="">All Programs</option></select>
         <select id="sg-role">
           <option value="" selected>as either</option>
@@ -141,7 +140,7 @@
         <span id="rcount">Showing <b id="rn">0</b> of <b id="rt">0</b> maps</span>
       </div>
       <div class="twrap">
-        <div class="mitre-overlay" style="position:fixed;bottom:10px;right:14px;font-family:var(--body);font-size:8px;color:rgba(0,0,0,.35);text-align:right;line-height:1.5;pointer-events:none;z-index:20;">Derived from the Kestrel eBPF sources (crates/bpf).<br>Kernel definitions from the Linux kernel (GPL-2.0/BSD-2-Clause).</div>
+        <div class="mitre-overlay" style="position:fixed;bottom:10px;right:14px;font-family:var(--body);font-size:8px;color:rgba(0,0,0,.35);text-align:right;line-height:1.5;pointer-events:none;z-index:20;">Derived from the Kestrel eBPF sources (crates/kestrel-ebpf).<br>Kernel definitions from the Linux kernel (GPL-2.0/BSD-2-Clause).</div>
         <div id="sg-status" class="eb-status">Loading the signal inventory&hellip;</div>
         <table id="tbl">
           <thead><tr>
@@ -171,9 +170,9 @@
 </div>
 
 <div id="tt"></div>
-<script src="assets/data/signals.min.js?v=48d315e1"></script>
-<script src="assets/js/signals-core.min.js?v=f9a26c52"></script>
-<script src="assets/js/signals-matrix.min.js?v=2650ff8b"></script>
+<script src="assets/data/signals.min.js?v=ae4d73b9"></script>
+<script src="assets/js/signals-core.min.js?v=b90e8418"></script>
+<script src="assets/js/signals-matrix.min.js?v=81e69158"></script>
 <script src="assets/js/nav.min.js?v=dc913c1b"></script>
 </body>
 </html>

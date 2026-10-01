@@ -125,39 +125,19 @@
         <button class="tbtn lit" id="sg-labels">&#8943; LABELS</button>
         <button class="tbtn" id="sg-about">&#9432; ABOUT</button>
         <div class="toolbar-sep"></div>
-        <label style="display:flex;align-items:center;gap:5px;font-size:9.5px">
-          Order
-          <select class="tsel" id="sg-sort" style="width:130px">
-            <option value="family" selected>By family</option>
-            <option value="degree">Most connected</option>
-            <option value="type">By map type</option>
-            <option value="name">By name</option>
-          </select>
-        </label>
-        <div class="toolbar-sep"></div>
         <span style="font-size:9.5px;color:var(--text-dim);letter-spacing:.8px">FILTER:</span>
         <select class="tsel" id="sg-scope">
-          <option value="shared" selected>Shared maps</option>
-          <option value="">Every map</option>
-          <option value="per-object">Per-object maps</option>
-          <option value="program">Program-private maps</option>
+          <option value="" selected>Every map</option>
+          <option value="shared">Shared maps</option>
+          <option value="object">Object-private maps</option>
         </select>
         <select class="tsel" id="sg-family"><option value="">All Families</option></select>
-        <select class="tsel" id="sg-type"><option value="">All Map Types</option></select>
         <select class="tsel" id="sg-flow"><option value="">All Flows</option></select>
-        <select class="tsel" id="sg-domain"><option value="">All Domains</option></select>
-        <select class="tsel" id="sg-prog"><option value="">All Programs</option></select>
-        <select class="tsel" id="sg-role">
-          <option value="" selected>as either</option>
-          <option value="produce">as producer</option>
-          <option value="consume">as consumer</option>
-        </select>
-        <input type="text" class="tsel" id="sg-q" placeholder="Search maps&hellip;">
         <span class="toolbar-hint">Scroll=zoom &middot; Drag=pan &middot; Click=focus + details &middot; Dbl-click=fit</span>
         <span id="sg-count">&mdash;</span>
       </div>
       <div class="canvas" id="cv-signals">
-        <div class="legend" id="lg-signals"><div class="mitre-overlay">Derived from the Kestrel eBPF sources (crates/bpf).<br>Kernel definitions from the Linux kernel (GPL-2.0/BSD-2-Clause).</div></div>
+        <div class="legend" id="lg-signals"><div class="mitre-overlay">Derived from the Kestrel eBPF sources (crates/kestrel-ebpf).<br>Kernel definitions from the Linux kernel (GPL-2.0/BSD-2-Clause).</div></div>
         <div id="sg-status" class="eb-status">Loading the signal inventory&hellip;</div>
       </div>
     </div>
@@ -171,9 +151,9 @@
 </div>
 
 <div id="tt"></div>
-<script src="assets/data/signals.min.js?v=48d315e1"></script>
-<script src="assets/js/signals-core.min.js?v=f9a26c52"></script>
-<script src="assets/js/signals.min.js?v=181b39f2"></script>
+<script src="assets/data/signals.min.js?v=ae4d73b9"></script>
+<script src="assets/js/signals-core.min.js?v=b90e8418"></script>
+<script src="assets/js/signals.min.js?v=d7fc50ef"></script>
 <script src="assets/js/nav.min.js?v=dc913c1b"></script>
 </body>
 </html>

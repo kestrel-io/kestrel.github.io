@@ -37,15 +37,16 @@ const FLOW_SHORT = {
   'control-input': 'read only', 'declared-only': 'no access',
 };
 const SCOPE_LABEL = {
-  shared: 'Shared', 'per-object': 'Per object', program: 'Program',
+  shared: 'Shared', 'per-object': 'Per object', object: 'Object',
 };
 const SCOPE_NOTE = {
-  shared: 'One kernel instance, pinned by name under /sys/fs/bpf/kestrel and reached by every program that declares it.',
-  'per-object': 'Declared in a shared header but not pinned: each program object that includes it gets its own instance.',
-  program: 'Declared by one program object and reached by nothing else.',
+  shared: 'Declared in all three objects: the loader creates it once and shares the descriptor into each before load, so there is one kernel instance.',
+  'per-object': 'Declared in more than one object but not in all three; each gets its own instance.',
+  object: 'Declared by one object only. Nothing outside that object reaches it without a descriptor from the loader.',
 };
+/* The three objects, by the key the data uses for a program's `domain`. */
 const DOMAIN_LABEL = {
-  core: 'Core', actionable: 'Actionable', telemetry: 'Telemetry',
+  host: 'host.bpf.o', net_sock: 'net_sock.bpf.o', net_pkt: 'net_pkt.bpf.o',
 };
 
 /* Filled by sigInit() from the SIGNALS global. */
@@ -71,7 +72,7 @@ function entriesOf(m) {
    FILTER STATE
 ------------------------------------------------------- */
 const F = {
-  scope: 'shared', domain: '', prog: '', role: '',
+  scope: '', domain: '', prog: '', role: '',
   type: '', family: '', flow: '', q: '',
 };
 const EL = {};
@@ -84,7 +85,7 @@ function touchProgs(m) {
 
 function mapText(m) {
   return [m.name, m.type, m.family, m.key, m.value, m.doc, m.blurb, m.file,
-          m.macro, m.gates.join(' '),
+          m.macro, m.gates.join(' '), (m.objects || []).join(' '),
           touchProgs(m).map(i => PROGS[i].name).join(' ')]
     .filter(Boolean).join(' ').toLowerCase();
 }
@@ -130,14 +131,17 @@ function rebuildSelect(el, values, labelFn) {
 function uniq(list) { return [...new Set(list)].sort((a, b) => String(a).localeCompare(String(b))); }
 
 function cascade() {
-  F.scope  = EL.scope.value;
-  F.domain = EL.domain.value;
-  F.prog   = EL.prog.value;
-  F.role   = EL.role ? EL.role.value : '';
-  F.type   = EL.type.value;
-  F.family = EL.family.value;
-  F.flow   = EL.flow.value;
-  F.q      = EL.q.value.trim().toLowerCase();
+  /* The graph page carries only scope, family and flow; the matrix page
+     has every control. A control that is not on the page filters nothing. */
+  const val = k => (EL[k] ? EL[k].value : '');
+  F.scope  = val('scope');
+  F.domain = val('domain');
+  F.prog   = val('prog');
+  F.role   = val('role');
+  F.type   = val('type');
+  F.family = val('family');
+  F.flow   = val('flow');
+  F.q      = EL.q ? EL.q.value.trim().toLowerCase() : '';
 
   rebuildSelect(EL.type,   uniq(shownMaps('type').map(m => m.type)));
   rebuildSelect(EL.family, uniq(shownMaps('family').map(m => m.family)));
@@ -152,8 +156,8 @@ function cascade() {
     v => PROGS[v].name);
 
   /* Re-read: a rebuild above may have dropped the previous selection. */
-  F.type = EL.type.value; F.family = EL.family.value; F.flow = EL.flow.value;
-  F.domain = EL.domain.value; F.prog = EL.prog.value;
+  F.type = val('type'); F.family = val('family'); F.flow = val('flow');
+  F.domain = val('domain'); F.prog = val('prog');
   if (EL.role) EL.role.disabled = F.prog === '';
 
   sigRender();
@@ -180,15 +184,18 @@ function chips(list, cls) {
     : '';
 }
 
-/* Which eBPF programs declare this map. A path would answer a question
-   nobody on this page is asking; the program is the unit the rest of the
-   panel is written in. */
-function ownerChips(ids) {
-  if (!ids.length) return `<div class="sp-row-desc">None.</div>`;
-  return `<div class="sp-chips">${ids.map(i =>
-    `<span class="sp-chip sig-chip-map" onclick="openProgPanel(${i})">` +
-    `${escHtml(PROGS[i].name)}</span>`).join('')}</div>`;
+/* Which objects declare this map. Every program in an object shares its
+   copy, so the object, not the program, is the unit a declaration belongs
+   to; the programs that actually touch it are the producers and consumers
+   below. */
+function ownerChips(objects) {
+  if (!objects.length) return `<div class="sp-row-desc">None.</div>`;
+  return `<div class="sp-chips">${objects.map(o =>
+    `<span class="sp-chip">${escHtml(o)}</span>`).join('')}</div>`;
 }
+
+/* A program's section, written as the source writes it. */
+function sectionOf(p) { return (p.attach && p.attach[0]) || ''; }
 
 /* The key/value shape: the struct's members, each with the comment the
    source keeps beside it. This is the "available key/value pairs" the
@@ -236,9 +243,9 @@ function edgeBlock(m, which) {
   const role = which === 'producers' ? 'produce' : 'consume';
   const color = which === 'producers' ? SC.produce : SC.consume;
   if (!list.length) {
-    return `<div class="sp-note">No program in <code>crates/bpf</code> ${
+    return `<div class="sp-note">No program in <code>crates/kestrel-ebpf</code> ${
       which === 'producers'
-        ? 'writes this map. Its contents come from userspace — the loader, the controller or the classifier.'
+        ? 'writes this map. Its contents come from userspace: the loader at load, or the daemon while it runs.'
         : 'reads this map. Its contents are drained by userspace.'}</div>`;
   }
   return list.map(e => {
@@ -273,16 +280,25 @@ function openMapPanel(i) {
       `<tr><td class="sig-f-type">type</td><td colspan="2" class="sig-f-name">BPF_MAP_TYPE_${escHtml(m.type)}</td></tr>` +
       `<tr><td class="sig-f-type">scope</td><td colspan="2" class="sig-f-name">${escHtml(SCOPE_LABEL[m.scope])}` +
         `<span class="sig-f-note"> — ${escHtml(SCOPE_NOTE[m.scope])}</span></td></tr>` +
-      (entriesOf(m) ? `<tr><td class="sig-f-type">max_entries</td><td colspan="2" class="sig-f-name">${escHtml(entriesOf(m))}</td></tr>` : '') +
+      (entriesOf(m) ? `<tr><td class="sig-f-type">max_entries</td><td colspan="2" class="sig-f-name">${escHtml(entriesOf(m))}${
+        m.max_entries_src && m.max_entries_src !== m.max_entries
+          ? `<span class="sig-f-note"> — ${escHtml(m.max_entries_src)}</span>` : ''}</td></tr>` : '') +
       (m.map_flags ? `<tr><td class="sig-f-type">map_flags</td><td colspan="2" class="sig-f-name">${escHtml(m.map_flags)}</td></tr>` : '') +
-      `<tr><td class="sig-f-type">pinned</td><td colspan="2" class="sig-f-name">${m.pinned ? 'LIBBPF_PIN_BY_NAME' : 'no'}</td></tr>` +
+      `<tr><td class="sig-f-type">pinned</td><td colspan="2" class="sig-f-name">${m.pinned ? escHtml(m.pinned) : 'no'}</td></tr>` +
       (m.macro ? `<tr><td class="sig-f-type">declared by</td><td colspan="2" class="sig-f-name">${escHtml(m.macro)}()</td></tr>` : '') +
-      (m.owners.length ? `<tr><td class="sig-f-type">instances</td><td colspan="2" class="sig-f-name">${
-        m.scope === 'shared' ? `1, shared by ${m.owners.length} program${m.owners.length > 1 ? 's' : ''}`
-                             : `${m.owners.length}, one per declaring object`}</td></tr>` : '') +
+      `<tr><td class="sig-f-type">instances</td><td colspan="2" class="sig-f-name">${
+        m.scope === 'shared'
+          ? `1, created by the loader and shared into ${m.objects.length} objects`
+          : m.scope === 'object'
+            ? `1, in ${escHtml(m.objects[0] || '')}`
+            : `${m.objects.length}, one per declaring object`}</td></tr>` +
+      `<tr><td class="sig-f-type">reached by</td><td colspan="2" class="sig-f-name">${
+        m.owners.length} program${m.owners.length === 1 ? '' : 's'} share the object${
+        m.objects.length > 1 ? 's' : ''}; ${
+        new Set([...edgeProgs(m, 'producers'), ...edgeProgs(m, 'consumers')]).size} touch the map</td></tr>` +
     `</tbody></table>` +
     `<div class="sig-kv-role" style="margin-bottom:4px">Declared by</div>` +
-    ownerChips(m.owners) +
+    ownerChips(m.objects) +
     (m.gates.length ? `<div class="sp-row-desc" style="margin-top:6px">Declared only when the object defines ${
       m.gates.map(g => `<code>${escHtml(g)}</code>`).join(' and ')}.</div>` : '') +
 
@@ -318,12 +334,15 @@ function openProgPanel(i) {
     `<table class="sig-fields sig-decl"><tbody>` +
       (p.prog_type ? `<tr><td class="sig-f-type">program type</td><td class="sig-f-name">${escHtml(p.prog_type)}</td></tr>` : '') +
       `<tr><td class="sig-f-type">object</td><td class="sig-f-name">${escHtml(p.base)}</td></tr>` +
-      (p.class ? `<tr><td class="sig-f-type">class · ctx</td><td class="sig-f-name">${escHtml(p.class)} · ${escHtml(p.ctx)}</td></tr>` : '') +
-      (p.lane ? `<tr><td class="sig-f-type">default lane</td><td class="sig-f-name">${escHtml(p.lane)}</td></tr>` : '') +
-      `<tr><td class="sig-f-type">attach points</td><td class="sig-f-name">${p.attach_count}</td></tr>` +
+      (sectionOf(p) ? `<tr><td class="sig-f-type">section</td><td class="sig-f-name">SEC("${escHtml(sectionOf(p))}")</td></tr>` : '') +
+      (p.attach_how ? `<tr><td class="sig-f-type">attached</td><td class="sig-f-name">${escHtml(p.attach_how)}</td></tr>` : '') +
+      `<tr><td class="sig-f-type">catalogue bit</td><td class="sig-f-name">${
+        p.catalogue >= 0 ? `${p.catalogue} of load_state.skipped` : 'not in the loader’s catalogue'}</td></tr>` +
+      (p.generated ? `<tr><td class="sig-f-type">written by</td><td class="sig-f-name">${escHtml(p.generated)}()</td></tr>` : '') +
     `</tbody></table>` +
-    (p.attach.length ? `<div class="sp-sec">Sections</div>${chips(p.attach)}` : '') +
-    (p.gates.length ? `<div class="sp-sec">Feature gates</div>${chips(p.gates)}` : '') +
+    (p.note ? `<div class="sp-note">${escHtml(p.note)}</div>` : '') +
+    (p.rows && p.rows.length ? `<div class="sp-sec">Rows it writes — layer.proto</div>${chips(p.rows)}` : '') +
+    (p.gates.length ? `<div class="sp-sec">Compiled under</div>${chips(p.gates)}` : '') +
 
     `<div class="sp-sec">Writes — ${p.produces.length} map${p.produces.length === 1 ? '' : 's'}</div>` +
     list(p.produces, 'produce') +
@@ -337,12 +356,18 @@ function openProgPanel(i) {
 function openAboutPanel() {
   const c = SIGNALS.counts;
   const body = document.getElementById('sp-body');
+  const objects = (SIGNALS.objects || []).map(o =>
+    `<div class="sig-edge"><div class="sig-edge-head"><span class="sig-edge-name">${escHtml(o.file)}</span>` +
+    `<span class="sp-chip">${o.programs} programs · ${o.maps} maps</span></div>` +
+    `<div class="sp-row-desc">${escHtml(o.doc)}</div></div>`).join('');
   body.innerHTML =
     `<div class="sp-name">Kestrel signals</div>` +
-    `<div class="sp-desc">Every eBPF map the programs under <code>crates/bpf</code> declare, ` +
+    `<div class="sp-desc">Every eBPF map the three objects under <code>crates/kestrel-ebpf</code> declare, ` +
     `with the programs that write it and the programs that read it.</div>` +
-    `<div class="sp-note">${c.maps} maps &nbsp;·&nbsp; ${c.shared} shared and pinned<br>` +
-    `${c.programs} program objects<br>${c.edges} producer / consumer edges</div>` +
+    `<div class="sp-note">ABI ${escHtml(SIGNALS.abi)}<br>` +
+    `${c.maps} maps &nbsp;·&nbsp; ${c.shared} created once by the loader and shared by all ${c.objects} objects<br>` +
+    `${c.programs} programs, the loader’s catalogue of ${c.catalogue}<br>${c.edges} producer / consumer edges</div>` +
+    `<div class="sp-sec">The objects</div>` + objects +
     `<div class="sp-sec">How this was derived</div>` +
     `<div class="sp-row-desc">${escHtml(SIGNALS.method)}</div>` +
     `<div class="sp-sec">About the examples</div>` +
@@ -381,8 +406,9 @@ function sigInit(render) {
 
   ['scope', 'domain', 'prog', 'role', 'type', 'family', 'flow'].forEach(k =>
     EL[k] && EL[k].addEventListener('change', cascade));
+  /* The matrix page has a search box; the graph does not. */
   let qTimer;
-  EL.q.addEventListener('input', () => {
+  if (EL.q) EL.q.addEventListener('input', () => {
     clearTimeout(qTimer);
     qTimer = setTimeout(cascade, 260);
   });

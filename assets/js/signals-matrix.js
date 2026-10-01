@@ -22,7 +22,7 @@ const cellText = {
   producers: m => m.producers.length,
   consumers: m => m.consumers.length,
   flow:      m => SIGNALS.flow_label[m.flow] || m.flow,
-  owners:    m => (m.owners.length ? PROGS[m.owners[0]].name : ''),
+  owners:    m => (m.objects.length ? m.objects.join(' ') : ''),
 };
 
 function sortRows(rows) {
@@ -43,9 +43,10 @@ function sortRows(rows) {
 ------------------------------------------------------- */
 const EMPTY = `<span style="color:var(--text-dim)">—</span>`;
 
-/* A lane ring has 28 producers; spelled out, one row would be taller than the
-   screen. The cell shows the first few and says how many it is holding back —
-   the details panel has the whole list, with the call sites. */
+/* The emit path's maps have ninety-odd producers; spelled out, one row would
+   be taller than the screen. The cell shows the first few and says how many
+   it is holding back — the details panel has the whole list, with the call
+   sites. */
 const CHIP_CAP = 6;
 
 function progChips(ids, cls, i) {
@@ -94,7 +95,12 @@ function fmtCell(col, m, i) {
       return `<span class="sig-flow-cell" style="color:${FLOW_COLOR[m.flow]}">` +
              `<i style="background:${FLOW_COLOR[m.flow]}"></i>${escHtml(FLOW_SHORT[m.flow])}</span>`;
     case 'owners':
-      return progChips(m.owners, '', i);
+      /* The object, not the program: every program in an object shares its
+         copy of the map, so the declaration belongs to the object. */
+      return m.objects.length
+        ? `<div class="sig-chip-row">${m.objects.map(o =>
+            `<span class="sig-chip">${escHtml(o)}</span>`).join('')}</div>`
+        : EMPTY;
     default:
       return EMPTY;
   }
