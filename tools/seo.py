@@ -119,22 +119,6 @@ PAGES = {
         crumb="eBPF Matrix", section=REFERENCES,
         priority="0.8", freq="monthly", ld=None,
     ),
-    "signals-visualized.html": dict(
-        title="eBPF Signal Map Graph — Producers and Consumers // Kestrel",
-        desc="Interactive graph of Kestrel's eBPF map inventory: every "
-             "SEC(\".maps\") declaration with the programs that write to it and "
-             "the ones that read it.",
-        crumb="Signals Visualized", section=REFERENCES,
-        priority="0.7", freq="monthly", ld=None,
-    ),
-    "signals-matrix.html": dict(
-        title="eBPF Signal Map Matrix — Scope, Keys, Flows // Kestrel",
-        desc="Filterable inventory of Kestrel's eBPF maps by family, type and "
-             "scope, with key/value pairs, producers, consumers and the "
-             "direction data flows.",
-        crumb="Signals Matrix", section=REFERENCES,
-        priority="0.7", freq="monthly", ld=None,
-    ),
 
     # ---- Datasets ------------------------------------------------------
     "dataset.html": dict(
@@ -248,6 +232,12 @@ PAGES = {
 
 # Pages kept out of the index: placeholder scaffolding with no search value.
 NOINDEX = {"docs/index.html"}
+
+# Pages kept on disk but hidden: not in the table, not in the sitemap, not
+# linked from the navigation, and marked noindex. A hidden page keeps its
+# own <head> as written.
+HIDDEN = {"signals-visualized.html", "signals-matrix.html"}
+NOINDEX |= HIDDEN
 
 
 def dataset_ld(url, name, description, keywords, attribution):
@@ -481,7 +471,7 @@ def main():
 
     # Every page on disk has to be in the table, or it ships with no metadata.
     on_disk = {f for f in glob.glob("*.html") if not f.startswith("_")}
-    missing = on_disk - set(PAGES)
+    missing = on_disk - set(PAGES) - HIDDEN
     if missing:
         raise SystemExit("seo: not in the page table: " + ", ".join(sorted(missing)))
     gone = set(PAGES) - on_disk
