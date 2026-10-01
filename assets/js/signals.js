@@ -21,11 +21,11 @@ const ROW_MAX = 30;
    also owns a colour, carried by its tiles, its header and every link that
    leaves or enters it: direction is the side (left writes, right reads), so
    colour is free to say which family a link belongs to. */
-const GROUP_GAP   = 26;  /* clear space between two bands, under the header */
+const GROUP_GAP   = 56;  /* clear space before the next band starts */
 const GROUP_HEAD  = 14;  /* the header line's own height */
 const GROUP_STEP  = COL_W + 24;  /* each band's sideways step: a full tile and a
                                     margin, so no two bands share a column */
-const GROUP_OVERLAP = 0.5;       /* the next band starts halfway down the one
+const GROUP_OVERLAP = 0.65;      /* the next band starts two thirds down the one
                                     before it: the staircase runs across the
                                     view rather than down it */
 const GROUP_PAD   = 8;           /* the band's background, past its tiles */
