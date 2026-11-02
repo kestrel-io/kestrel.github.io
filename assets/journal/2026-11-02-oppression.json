@@ -1,0 +1,14 @@
+{
+  "title": "Oppression & suppression",
+  "date": "2026-11-02",
+  "tldr": "Focus, focus, focus... the kernel is noisy, listening is essential.",
+  "contents": [
+    "When under load, an adversary can create an oppresive environment, the countermeasures require suppression.",
+    "## Listen!!!",
+    "In the words of Tyler Durden, 'Stop trying to control everything, and just let go. Let go!'",
+    "The only way to ensure a laser focus is achieved, dropping eBPF kernel events en masse in order to shift focus on those that matter.",
+    "## Forensics, incident response...",
+    "A sequence is going to be required to ensure traceability at the same time. Working through the noise..."
+  ],
+  "tags": ["focus", "fight club", "journal"]
+}
